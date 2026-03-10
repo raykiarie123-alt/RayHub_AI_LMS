@@ -1,6 +1,6 @@
 # RayHub AI LMS
 
-RayHub is an AI-powered Learning Management System designed to help CPA students track progress, practice past papers, and receive intelligent study recommendations.
+RayHub is an AI-powered Learning Management System designed to help Kasneb(first focusing on CPA) students track progress, practice past papers, and receive intelligent study recommendations.
 
 ## Features
 
