@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, ForeignKey, DateTime
+from sqlalchemy import Column, Integer, String, Text, ForeignKey, DateTime, Boolean
 from sqlalchemy.orm import relationship
 from datetime import datetime   
 from app.database import Base
@@ -68,6 +68,83 @@ class Topic(Base):
     created_at = Column(DateTime, default=datetime.utcnow)  
 
     unit = relationship("Unit", back_populates="topics")
-    
 
+#quiz model to represent quizzes for each topic.
+class Quiz(Base):
+    __tablename__ = "quizzes"
+
+    #primary key
+    id = Column(Integer, primary_key=True, index=True)
+    #each quiz belongs to a topic
+    topic_id = Column(Integer, ForeignKey("topics.id"))
+    #quiz question
+    title = Column(String, index=True)
     
+    #when quiz was created
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+#question model to represent questions for each quiz.
+class Question(Base):
+    __tablename__ = "questions"
+
+    # Primary key
+    id = Column(Integer, primary_key=True)
+
+    # Question belongs to a quiz
+    quiz_id = Column(Integer, ForeignKey("quizzes.id"))
+
+    # Question text
+    question_text = Column(Text)
+
+    # Multiple choice options
+    option_a = Column(String)
+    option_b = Column(String)
+    option_c = Column(String)
+    option_d = Column(String)
+
+    # Correct option (A,B,C,D)
+    correct_answer = Column(String)
+
+#quiz attempt model to represent user attempts at quizzes.
+class QuizAttempt(Base):
+    __tablename__ = "quiz_attempts"
+    #primary key
+    id = Column(Integer, primary_key=True)
+    #foreign key to user who attempted the quiz
+    user_id = Column(Integer, ForeignKey("users.id"))
+    #foreign key to the quiz that was attempted
+    quiz_id = Column(Integer, ForeignKey("quizzes.id"))
+    #final score of the quiz attempt
+    score = Column(Integer)
+    #when the quiz was attempted
+    attempted_at = Column(DateTime, default=datetime.utcnow)
+
+#student answer table
+class StudentAnswer(Base):
+    __tablename__ = "student_answers"
+    #primary key
+    id = Column(Integer, primary_key=True)
+    #foreign key to quiz attempt
+    quiz_attempt_id = Column(Integer, ForeignKey("quiz_attempts.id"))
+    #foreign key to question being answered
+    question_id = Column(Integer, ForeignKey("questions.id"))
+    #the answer provided by the student (A,B,C,D)
+    selected_option = Column(String)
+    #whether the answer was correct or not    is_correct = Column(Boolean)
+    is_correct = Column(Boolean)
+
+#past Paper model to represent past CPA exam papers.
+class PastPaper(Base):
+    __tablename__ = "past_papers"
+    #primary key
+    id = Column(Integer, primary_key=True)
+    #unit the past paper belongs to    unit_id = Column(Integer, ForeignKey("units.id"))
+    unit_id = Column(Integer, ForeignKey("units.id"))
+    #title of the past paper
+    title = Column(String, index=True)
+    #description of the past paper
+    description = Column(Text)
+    #url to download the past paper
+    file_url = Column(String(300))
+    #when the past paper was added to the system
+    created_at = Column(DateTime, default=datetime.utcnow)
