@@ -148,3 +148,24 @@ class PastPaper(Base):
     file_url = Column(String(300))
     #when the past paper was added to the system
     created_at = Column(DateTime, default=datetime.utcnow)
+
+
+
+class PastPaperSubmission(Base):
+    __tablename__ = "past_paper_submissions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    past_paper_id = Column(Integer, ForeignKey("past_papers.id"))
+    answer_text = Column(Text)
+    score = Column(Integer)
+
+#topic mastery model to track student performance on different topics.
+class TopicMastery(Base):
+    __tablename__ = "topic_mastery"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    topic_id = Column(Integer, ForeignKey("topics.id"))
+    mastery_score = Column('float')  # e.g., 0-100 score based on quiz performance
+    last_reviewed = Column(DateTime, default=datetime.utcnow)

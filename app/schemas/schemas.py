@@ -1,5 +1,6 @@
 #schemas define how data is sent and received in the API. They are used for validation and serialization of data.   
 from pydantic import BaseModel
+from typing import List
 
 class UserRegister(BaseModel):
     username: str
@@ -11,7 +12,7 @@ class UserLogin(BaseModel):
     password: str
 
 class CourseCreate(BaseModel):
-    name: str
+    title: str
     description: str
 
 class LevelCreate(BaseModel):
@@ -30,3 +31,4 @@ class TopicCreate(BaseModel):
     content: str
     video_url: str
     unit_id: int
+

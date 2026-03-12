@@ -1,15 +1,16 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.database import get_db
-from app.models.models import Course
-from app.schemas.schemas import CourseCreate
+from app.models.models import Course, Level, Unit, Topic
+from app.schemas.schemas import CourseCreate, LevelCreate, UnitCreate, TopicCreate  
 
-router = APIRouter()
 
-@router.post("/courses/", response_model=CourseCreate)
+router = APIRouter(prefix="/courses", tags=["Courses"])
+router = APIRouter(prefix="/quiz", tags=["Quiz"])
+
 def create_course(course: CourseCreate, db: Session = Depends(get_db)):
     new_course = Course(
-        name=course.name, 
+        title=course.title,
         description=course.description
         )
     db.add(new_course)
@@ -81,3 +82,4 @@ def create_topic(topic: TopicCreate, db: Session = Depends(get_db)):
     db.refresh(new_topic)
 
     return new_topic
+
