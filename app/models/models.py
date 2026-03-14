@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, ForeignKey, DateTime, Boolean
+from sqlalchemy import Column, Integer, String, Text, ForeignKey, DateTime, Boolean, Float
 from sqlalchemy.orm import relationship
 from datetime import datetime   
 from app.database import Base
@@ -167,5 +167,5 @@ class TopicMastery(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"))
     topic_id = Column(Integer, ForeignKey("topics.id"))
-    mastery_score = Column('float')  # e.g., 0-100 score based on quiz performance
+    mastery_score = Column(Float, default=0.0)  # e.g., 0-100 score based on quiz performance
     last_reviewed = Column(DateTime, default=datetime.utcnow)
