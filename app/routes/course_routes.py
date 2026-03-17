@@ -6,7 +6,6 @@ from app.schemas.schemas import CourseCreate, LevelCreate, UnitCreate, TopicCrea
 
 
 router = APIRouter(prefix="/courses", tags=["Courses"])
-router = APIRouter(prefix="/quiz", tags=["Quiz"])
 
 def create_course(course: CourseCreate, db: Session = Depends(get_db)):
     new_course = Course(

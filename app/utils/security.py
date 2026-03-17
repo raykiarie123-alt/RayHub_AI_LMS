@@ -5,6 +5,8 @@ from datetime import datetime, timedelta
 # Secret key for JWT encoding and decoding
 SECRET_KEY = "rayhub_secret_key"
 ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRES_HOURS = 2
+
 # Create a password context for hashing and verifying passwords
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")  
 

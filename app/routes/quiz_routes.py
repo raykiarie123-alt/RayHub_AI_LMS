@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.models import Quiz, Question, QuizAttempt, StudentAnswer
 from app.schemas.quiz_schema import QuizCreate, QuestionCreate, QuizSubmission
+from app.services.quiz_service import submit_quiz
 
 router = APIRouter(prefix="/quiz", tags=["Quiz"])
 

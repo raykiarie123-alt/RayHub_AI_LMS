@@ -1,4 +1,5 @@
-from sqlalchemy import Column, Integer, String, Text, ForeignKey, DateTime, Boolean, Float
+from sqlalchemy import Column, Integer, String, Text, ForeignKey, DateTime, Boolean, Float, Date
+from sqlalchemy import Time
 from sqlalchemy.orm import relationship
 from datetime import datetime   
 from app.database import Base
@@ -15,7 +16,6 @@ class User(Base):
     role = Column(String(50), default="student")
     created_at = Column(DateTime, default=datetime.utcnow)  
     full_name = Column(String)
-
 
 #create course model to represent courses in the system.
 class Course(Base):
@@ -150,7 +150,6 @@ class PastPaper(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
 
-
 class PastPaperSubmission(Base):
     __tablename__ = "past_paper_submissions"
 
@@ -160,12 +159,58 @@ class PastPaperSubmission(Base):
     answer_text = Column(Text)
     score = Column(Integer)
 
-#topic mastery model to track student performance on different topics.
+
+class StudentProfile(Base):
+    __tablename__ = "student_profiles"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    
+    study_hours_per_day = Column(Float, default=0.0)
+    preferred_learning_style = Column(String(50)) 
+    target_exam_date = Column(Date) 
+    
+    daily_reminder_time = Column(Time) 
+    created_at = Column(DateTime, default=datetime.utcnow) 
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+ #topic mastery model to track student performance on different topics.   
 class TopicMastery(Base):
     __tablename__ = "topic_mastery"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"))
+    student_id = Column(Integer, ForeignKey("users.id"))
     topic_id = Column(Integer, ForeignKey("topics.id"))
-    mastery_score = Column(Float, default=0.0)  # e.g., 0-100 score based on quiz performance
-    last_reviewed = Column(DateTime, default=datetime.utcnow)
+    average_score = Column(Float, default=0.0)
+    attempts = Column(Integer)
+    mastery_level = Column(String(50))  # e.g., "beginner", "intermediate", "advanced"
+    updated_at = Column(DateTime, default=datetime.utcnow)
+
+class StudyPlan(Base):
+    __tablename__ = "study_plans"
+
+    id = Column(Integer, primary_key=True, index=True)
+    student_id = Column(Integer, ForeignKey("users.id"))
+    topic_id = Column(Integer, ForeignKey("topics.id"))
+    study_date = Column(Date)
+    status = Column(String(50))  # e.g., "pending", "completed", "missed"
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+class Recommendation(Base):
+    __tablename__ = "recommendations"
+
+    id = Column(Integer, primary_key=True, index=True)
+    student_id = Column(Integer, ForeignKey("users.id"))
+    recommendation_type = Column(Text)
+    message = Column(Text)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+class Reminder(Base):
+    __tablename__ = "reminders"
+
+    id = Column(Integer, primary_key=True, index=True)
+    student_id = Column(Integer, ForeignKey("users.id"))
+    reminder_time = Column(DateTime)
+    message = Column(Text)
+    status = Column(String(50), default="pending")  # e.g., "pending", "sent", "missed"
+    created_at = Column(DateTime, default=datetime.utcnow)

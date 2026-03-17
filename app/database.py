@@ -20,6 +20,7 @@ SessionLocal = sessionmaker(
 #declarative_base() function is used to create a new base class for declarative class definitions.
 Base = declarative_base()   
 
+#get_db() function is a dependency that provides a database session to the API endpoints. It creates a new session, yields it to the endpoint, and ensures that the session is closed after the request is completed.
 from sqlalchemy.orm import Session
 
 def get_db():
@@ -28,3 +29,4 @@ def get_db():
         yield db
     finally:
         db.close()
+        

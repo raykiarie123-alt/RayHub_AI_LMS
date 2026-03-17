@@ -1,11 +1,13 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 
 from app.database import get_db
 from app.models.models import QuizAttempt, Question, StudentAnswer, Quiz, Topic
 
-router = APIRouter(prefix="/students", tags=["Students Analytics"])
+from app.schemas.student_schema import StudentProfileCreate, StudentProfileResponse, StudentProfileUpdate
+from app.services.student_service import create_profile, get_profile, update_profile
+router = APIRouter(prefix="/students", tags=["Students"])
 
 @router.get("/dashboard")
 def get_student_dashboard(db: Session = Depends(get_db)):
@@ -90,3 +92,31 @@ def weak_topics(db: Session = Depends(get_db)):
         })
 
     return results
+
+#Create Profile
+@router.post("/profile", response_model=StudentProfileResponse)
+def create_student_profile(profile_data: StudentProfileCreate, db: Session = Depends(get_db)):
+    user_id = 1  # temporary until JWT integration
+
+    profile = get_profile(db, user_id)
+    if profile:
+            raise HTTPException(status_code=400, detail="Profile already exists")
+    return create_profile(db, user_id, data)
+
+#Get Profile
+@router.get("/profile", response_model=StudentProfileResponse)
+def get_student_profile(db: Session = Depends(get_db)):
+    user_id = 1  # temporary until JWT integration
+    profile = get_profile(db, user_id)
+    if not profile:
+        raise HTTPException(status_code=404, detail="Profile not found")
+    return profile
+
+#Update Profile
+@router.put("/profile", response_model=StudentProfileResponse)  
+def update_student_profile(profile_data: StudentProfileUpdate, db: Session = Depends(get_db)):
+    user_id = 1  # temporary until JWT integration
+    profile = update_profile(db, user_id)
+    if not profile:
+        raise HTTPException(status_code=404, detail="Profile not found")
+    return profile
