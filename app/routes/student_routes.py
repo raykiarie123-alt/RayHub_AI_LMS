@@ -9,6 +9,10 @@ from app.schemas.student_schema import StudentProfileCreate, StudentProfileRespo
 from app.services.student_service import create_profile, get_profile, update_profile
 router = APIRouter(prefix="/students", tags=["Students"])
 
+from app.services.analytics_service import calculate_topic_mastery
+from typing import List
+from app.schemas.student_schema import TopicMasteryResponse 
+
 @router.get("/dashboard")
 def get_student_dashboard(db: Session = Depends(get_db)):
 
@@ -120,3 +124,19 @@ def update_student_profile(profile_data: StudentProfileUpdate, db: Session = Dep
     if not profile:
         raise HTTPException(status_code=404, detail="Profile not found")
     return profile
+
+@router.get("/topic-mastery", response_model=List[TopicMasteryResponse])
+def topic_mastery(db: Session = Depends(get_db)):
+    user_id = 1
+    mastery = calculate_topic_mastery(db, user_id)
+    return [
+        {
+            "topic_id": record.topic_id,
+            "average_score": record.average_score,
+            "attempts": record.attempts,
+            "mastery_level": record.mastery_level
+        }
+        for record in mastery
+    ]
+    return mastery
+

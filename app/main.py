@@ -6,6 +6,8 @@ from app.routes import student_routes
 from app.routes import quiz_routes
 from app.routes import auth_routes
 from app.routes import pastpaper_routes 
+from app.routes import ai_routes
+
 
 # Create the database tables
 models.Base.metadata.create_all(bind=engine)   
@@ -29,3 +31,5 @@ app.include_router(quiz_routes.router)
 app.include_router(student_routes.router)
 
 app.include_router(pastpaper_routes.router)
+
+app.include_router(ai_routes.router)

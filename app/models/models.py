@@ -182,7 +182,7 @@ class TopicMastery(Base):
     student_id = Column(Integer, ForeignKey("users.id"))
     topic_id = Column(Integer, ForeignKey("topics.id"))
     average_score = Column(Float, default=0.0)
-    attempts = Column(Integer)
+    attempts = Column(Integer, default=0)
     mastery_level = Column(String(50))  # e.g., "beginner", "intermediate", "advanced"
     updated_at = Column(DateTime, default=datetime.utcnow)
 

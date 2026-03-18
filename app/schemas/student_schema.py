@@ -25,3 +25,12 @@ class StudentProfileResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+class TopicMasteryResponse(BaseModel):
+    topic_id: int
+    average_score: float
+    attempts: int
+    mastery_level: str
+
+    class Config:
+        from_attributes = True
