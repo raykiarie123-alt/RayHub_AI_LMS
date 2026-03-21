@@ -8,3 +8,7 @@ class Task(BaseModel):
 class StudyPlanDay(BaseModel):
     date: str
     tasks: List[Task]
+
+class Recommendation(BaseModel):
+    message: str
+    priority: str
