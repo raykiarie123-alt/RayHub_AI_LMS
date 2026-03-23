@@ -5,6 +5,9 @@ from app.database import get_db
 from app.models.models import Quiz, Question, QuizAttempt, StudentAnswer
 from app.schemas.quiz_schema import QuizCreate, QuestionCreate, QuizSubmission
 from app.services.quiz_service import submit_quiz
+from app.services.gamification_service import award_points, update_streaks
+from app.services.notification_service import create_notification
+
 
 router = APIRouter(prefix="/quiz", tags=["Quiz"])
 
@@ -70,5 +73,19 @@ def attempt_quiz(submission: QuizSubmission, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(quiz_attempt)
 
-    return {"score": quiz_attempt.score}    
+    return {"score": quiz_attempt.score}   
+
+    score = calculated score from quiz attempt logic
+    # Award points based on score
+    points = award_points(score) * 10 
+    award_points(db, user_id, points)
+
+    streak = update_streaks(db, user_id)
+
+    # Create notification for points awarded
+    create_notification(db, user_id, f"You've earned {points} points for your quiz attempt! Current streak: {streak} days.")
+    return {"score": score, "points_awarded": points, "current_streak": streak} 
+
+
+
 

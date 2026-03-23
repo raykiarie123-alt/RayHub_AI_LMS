@@ -60,3 +60,12 @@ class StudentDashboard(BaseModel):
     study_plan: List[StudyPlanDay]
     recommendations: List[Recommendation]
     reminders: List[Reminder]
+
+class Gamification(BaseModel):
+    points: int
+    badges: List[str]
+    leaderboard_position: int
+
+class NotificationOut(BaseModel):
+    message: str
+    timestamp: str

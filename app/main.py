@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from app.database import engine, Base
-from app.models import models
+from app.models import Base
 from app.routes import course_routes
 from app.routes import student_routes
 from app.routes import quiz_routes

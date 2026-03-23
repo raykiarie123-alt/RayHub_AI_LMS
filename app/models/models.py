@@ -16,6 +16,7 @@ class User(Base):
     role = Column(String(50), default="student")
     created_at = Column(DateTime, default=datetime.utcnow)  
     full_name = Column(String)
+    notifications = relationship("Notification", back_populates="student")
 
 #create course model to represent courses in the system.
 class Course(Base):
@@ -214,3 +215,54 @@ class Reminder(Base):
     message = Column(Text)
     status = Column(String(50), default="pending")  # e.g., "pending", "sent", "missed"
     created_at = Column(DateTime, default=datetime.utcnow)
+
+    #add gamification elements like points, badges, and leaderboards to motivate students.
+class Gamification(Base):
+    __tablename__ = "user_points"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    points = Column(Integer, default=0)
+
+class UserPoints(Base):
+    __tablename__ = "user_points"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    points = Column(Integer, default=0)
+    student = relationship("User", back_populates="points")
+
+class UserStreak(Base):
+    __tablename__ = "user_streaks"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    streak_count = Column(Integer, default=0)
+    last_active_date = Column(Date)
+
+class Badge(Base):
+    __tablename__ = "badges"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(100))
+    description = Column(Text)
+
+class UserBadge(Base):
+    __tablename__ = "user_badges"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    badge_id = Column(Integer, ForeignKey("badges.id"))
+    awarded_at = Column(DateTime, default=datetime.utcnow)
+
+#Notifications Table to store notifications for users.
+class Notification(Base):
+    __tablename__ = "notifications"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    message = Column(Text)
+    is_read = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    student = relationship("User", back_populates="notifications")
