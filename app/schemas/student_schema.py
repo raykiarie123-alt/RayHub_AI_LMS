@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 from datetime import date, time
+from typing import List
 
 class StudentProfileCreate(BaseModel):
     study_hours_per_day: int
@@ -34,3 +35,28 @@ class TopicMasteryResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+class Task(BaseModel):
+    date: date
+    topic_id: int
+    task_type: str
+    description: str
+class StudyPlanDay(BaseModel):
+    date: str
+    tasks: List[Task]
+
+class Recommendation(BaseModel):
+    message: str
+    priority: str 
+
+class Reminder(BaseModel):
+    date: date
+    time: str
+    message: str
+
+class StudentDashboard(BaseModel):
+    profile: StudentProfileResponse
+    topic_mastery: List[TopicMasteryResponse]
+    study_plan: List[StudyPlanDay]
+    recommendations: List[Recommendation]
+    reminders: List[Reminder]

@@ -7,6 +7,9 @@ from app.models.models import QuizAttempt, Question, StudentAnswer, Quiz, Topic
 
 from app.schemas.student_schema import StudentProfileCreate, StudentProfileResponse, StudentProfileUpdate
 from app.services.student_service import create_profile, get_profile, update_profile
+from app.services.student_service import get_student_dashboard
+from app.schemas.student_schema import StudentDashboard
+
 router = APIRouter(prefix="/students", tags=["Students"])
 
 from app.services.analytics_service import calculate_topic_mastery
@@ -105,7 +108,7 @@ def create_student_profile(profile_data: StudentProfileCreate, db: Session = Dep
     profile = get_profile(db, user_id)
     if profile:
             raise HTTPException(status_code=400, detail="Profile already exists")
-    return create_profile(db, user_id, data)
+    return create_profile(db, user_id)
 
 #Get Profile
 @router.get("/profile", response_model=StudentProfileResponse)
@@ -139,4 +142,9 @@ def topic_mastery(db: Session = Depends(get_db)):
         for record in mastery
     ]
     return mastery
+
+@router.get("/dashboard", response_model=StudentDashboard)
+def student_dashboard(db: Session = Depends(get_db)):
+    user_id = 1
+    return get_student_dashboard(db, user_id)
 
