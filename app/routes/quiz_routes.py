@@ -1,15 +1,14 @@
-from fastapi import APIRouter, Depends
-
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+
 from app.database import get_db
 from app.models.models import Quiz, Question, QuizAttempt, StudentAnswer
 from app.schemas.quiz_schema import QuizCreate, QuestionCreate, QuizSubmission
-from app.services.quiz_service import submit_quiz
-from app.services.gamification_service import award_points, update_streaks
+from app.services.gamification_service import update_streak
 from app.services.notification_service import create_notification
 
-
 router = APIRouter(prefix="/quiz", tags=["Quiz"])
+
 
 @router.post("/")
 def create_quiz(quiz: QuizCreate, db: Session = Depends(get_db)):
@@ -17,11 +16,13 @@ def create_quiz(quiz: QuizCreate, db: Session = Depends(get_db)):
         topic_id=quiz.topic_id,
         title=quiz.title
     )
+
     db.add(new_quiz)
     db.commit()
     db.refresh(new_quiz)
 
     return new_quiz
+
 
 @router.post("/questions")
 def create_question(question: QuestionCreate, db: Session = Depends(get_db)):
@@ -34,58 +35,75 @@ def create_question(question: QuestionCreate, db: Session = Depends(get_db)):
         option_d=question.option_d,
         correct_answer=question.correct_answer
     )
+
     db.add(new_question)
     db.commit()
     db.refresh(new_question)
 
     return new_question
 
+
 @router.post("/attempt")
 def attempt_quiz(submission: QuizSubmission, db: Session = Depends(get_db)):
+    user_id = 1  # replace later with authenticated user
 
-    score = 0
-    
+    # validate quiz exists
+    quiz = db.query(Quiz).filter(Quiz.id == submission.quiz_id).first()
+    if not quiz:
+        raise HTTPException(status_code=404, detail="Quiz not found")
+
+    correct_answers = 0
+    total_questions = len(submission.answers)
+
+    # create attempt first
     quiz_attempt = QuizAttempt(
+        user_id=user_id,
         quiz_id=submission.quiz_id,
-        user_id=1,  # Replace with actual user ID from auth
-        score=0  # Initial score, will be calculated below
+        score=0
     )
     db.add(quiz_attempt)
     db.commit()
     db.refresh(quiz_attempt)
 
-    total_questions = len(submission.answers)
-    correct_answers = 0
-
+    # save each answer
     for answer in submission.answers:
-        question = db.query(Question).filter(Question.id == answer.question_id).first()
-        if question and question.correct_answer == answer.selected_option:
+        question = db.query(Question).filter(
+            Question.id == answer.question_id
+        ).first()
+
+        if not question:
+            continue
+
+        is_correct = False
+        if question.correct_answer == answer.selected_option:
             correct_answers += 1
+            is_correct = True
 
         student_answer = StudentAnswer(
             quiz_attempt_id=quiz_attempt.id,
             question_id=answer.question_id,
-            selected_option=answer.selected_option
+            selected_option=answer.selected_option,
+            is_correct=is_correct
         )
         db.add(student_answer)
 
+    # calculate percentage score
     quiz_attempt.score = int((correct_answers / total_questions) * 100) if total_questions > 0 else 0
+
     db.commit()
     db.refresh(quiz_attempt)
 
-    return {"score": quiz_attempt.score}   
+    # update streak
+    streak = update_streak(db, user_id)
 
-    score = calculated score from quiz attempt logic
-    # Award points based on score
-    points = award_points(score) * 10 
-    award_points(db, user_id, points)
+    # create notification
+    create_notification(
+        db,
+        user_id,
+        f"You scored {quiz_attempt.score}%. Current streak: {streak} days."
+    )
 
-    streak = update_streaks(db, user_id)
-
-    # Create notification for points awarded
-    create_notification(db, user_id, f"You've earned {points} points for your quiz attempt! Current streak: {streak} days.")
-    return {"score": score, "points_awarded": points, "current_streak": streak} 
-
-
-
-
+    return {
+        "score": quiz_attempt.score,
+        "current_streak": streak
+    }

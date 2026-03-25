@@ -1,29 +1,36 @@
 from datetime import datetime, timedelta
-from app.models import UserPoints, UserStreak, UserBadge
+from sqlalchemy.orm import Session
+from app.models.models import UserStreaks, UserBadge
 
-def award_points(db, user_id, points):
-    record = db.query(UserPoints).filter(UserPoints.user_id == user_id).first()
-    if not record:
-        record = UserPoints(user_id=user_id, points=points)
-        db.add(record)
-    else:
-        record.points += points
-    db.commit() 
-    return record.points
 
-def update_streak(db, user_id):
-    record = db.query(UserStreak).filter(UserStreak.user_id == user_id).first()
-    today = datetime.today().date()
+def update_streak(db: Session, user_id: int):
+    record = db.query(UserStreaks).filter(UserStreaks.user_id == user_id).first()
+    today = datetime.utcnow().date()
 
     if not record:
-        record = UserStreak(user_id=user_id, current_streak=1, last_active_date=today)
+        record = UserStreaks(
+            user_id=user_id,
+            streak_count=1,
+            last_active_date=today
+        )
         db.add(record)
-    else:
-        if record.last_active_date == today - timedelta(days=1):
-            record.current_streak += 1
-        elif record.last_active_date < today - timedelta(days=1):
-            record.current_streak = 1
-        record.last_active_date = today
+        db.commit()
+        db.refresh(record)
+        return record.streak_count
 
+    last_date = record.last_active_date
+
+    if last_date == today:
+        return record.streak_count
+
+    if last_date == today - timedelta(days=1):
+        record.streak_count += 1
+    else:
+        record.streak_count = 1
+
+    record.last_active_date = today
     db.commit()
-    return record.current_streak
+    db.refresh(record)
+
+    return record.streak_count
+

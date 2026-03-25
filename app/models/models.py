@@ -4,7 +4,6 @@ from sqlalchemy.orm import relationship
 from datetime import datetime   
 from app.database import Base
 
-
 #create a User model to represent users in the system.
 class User(Base):
     __tablename__ = "users"
@@ -17,6 +16,7 @@ class User(Base):
     created_at = Column(DateTime, default=datetime.utcnow)  
     full_name = Column(String)
     notifications = relationship("Notification", back_populates="student")
+    streak = relationship("UserStreak", back_populates="student")
 
 #create course model to represent courses in the system.
 class Course(Base):
@@ -224,15 +224,8 @@ class Gamification(Base):
     user_id = Column(Integer, ForeignKey("users.id"))
     points = Column(Integer, default=0)
 
-class UserPoints(Base):
-    __tablename__ = "user_points"
 
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"))
-    points = Column(Integer, default=0)
-    student = relationship("User", back_populates="points")
-
-class UserStreak(Base):
+class UserStreaks(Base):
     __tablename__ = "user_streaks"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -242,10 +235,17 @@ class UserStreak(Base):
 
 class Badge(Base):
     __tablename__ = "badges"
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, index=True)
+    description = Column(Text)
+
+
 
     id = Column(Integer, primary_key=True, index=True)
-    name = Column(String(100))
+    name = Column(String, index=True)
     description = Column(Text)
+    criteria = Column(Text)  # e.g., "Earn 100 points", "Complete 10 quizzes"
+
 
 class UserBadge(Base):
     __tablename__ = "user_badges"

@@ -1,12 +1,15 @@
 from fastapi import FastAPI
 from app.database import engine, Base
-from app.models import Base
+from app.models import models
+
 from app.routes import course_routes
 from app.routes import student_routes
 from app.routes import quiz_routes
 from app.routes import auth_routes
 from app.routes import pastpaper_routes 
 from app.routes import ai_routes
+from app.routes import notification_routes
+from app.routes import gamification_routes  
 
 
 # Create the database tables
@@ -33,3 +36,7 @@ app.include_router(student_routes.router)
 app.include_router(pastpaper_routes.router)
 
 app.include_router(ai_routes.router)
+
+app.include_router(notification_routes.router)
+
+app.include_router(gamification_routes.router)

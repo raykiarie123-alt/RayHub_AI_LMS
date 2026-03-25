@@ -6,7 +6,7 @@ from app.services.ai_service import generate_study_plan
 from app.services.recommendation_service import generate_recommendations, generate_reminders
 from datetime import datetime, timedelta    
 from app.services.notification_service import get_notifications
-from app.models.models import UserPoints, UserStreaks
+from app.models.models import UserStreaks
 
 def get_student_dashboard(db: Session, user_id: int):
 
@@ -71,9 +71,10 @@ def get_student_dashboard(db, student_id):
             "message": "We noticed you haven't been active. Consider reviewing your study plan or attempting a quiz."
         })
 
-    #5. gamification elements (points, badges, streaks)
-    points = db.query(UserPoints).filter(UserPoints.user_id == student_id).first()  
+    #5. gamification elements (badges, streaks)
     streaks = db.query(UserStreaks).filter(UserStreaks.user_id == student_id).first()  
+    badges = [] #fetch badges based on points or achievements from DB
+
 
     #6. Notifications    notifications = get_notifications(db, student_id)
     notifications = get_notifications(db, student_id)   
@@ -84,8 +85,8 @@ def get_student_dashboard(db, student_id):
         "study_plan": study_plan,
         "recommendations": recommendations,
         "reminders": reminders,
-        "points": points.points if points else 0,
-        "streak": streak.streak_count if streak else 0,
+        "streak": streaks.streak_count if streaks else 0,
+        "badges": badges,
         "notifications": notifications
     }
 
