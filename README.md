@@ -8,23 +8,31 @@ Unlike traditional LMS platforms, RayHub integrates Retrieval-Augmented Generati
 
 RayHub is built around the following key objectives:
 
-AI-Driven Personalization
-Generate adaptive study plans based on learner goals, performance trends, available time, and learning preferences.
-Intelligent Assessment Systems
+1. AI-Driven Personalization
+
+ Generate adaptive study plans based on learner goals, performance trends, available time, and learning preferences.
+
+2. Intelligent Assessment Systems
+
 Provide adaptive quizzes, flashcards, and AI-generated questions to improve retention and track mastery.
-Centralized Resource Management
+
+3. Centralized Resource Management
 Consolidate notes, past papers, summaries, and external materials into one unified platform.
-Gamified Learning Experience
+
+4. Gamified Learning Experience
 Increase engagement through streaks, points, badges, and progress tracking.
-Community-Driven Learning (Phase 3)
+
+5. Community-Driven Learning (Phase 3)
 Enable collaboration through shared resources, peer discussions, and group challenges.
+
 🧩 Key Features
-📚 LMS Core
+1. 📚 LMS Core
 Course and unit tracking (CPA-focused)
 Quiz system and past paper practice
 Student progress monitoring
 Secure authentication using JWT
-🤖 AI Learning Engine (RAG)
+
+2. 🤖 AI Learning Engine (RAG)
 Upload PDFs and external resource links
 Ask AI questions based on your materials
 AI-generated:
@@ -32,17 +40,21 @@ Summaries
 Quiz questions
 Concept explanations
 Combine official LMS content + personal uploads
-🧠 Smart Study Scheduler
+
+3. 🧠 Smart Study Scheduler
 Generates study plans based on:
 Weak topics
 Exam timelines
 Available study hours
 Uploaded learning materials
-📊 Analytics & Insights (Upcoming)
+
+4. 📊 Analytics & Insights (Upcoming)
 Engagement tracking
 Weak topic detection
 Performance trends
 AI usage insights
+
+
 🏗️ System Architecture
 Frontend (Angular)
         ↓
@@ -80,17 +92,29 @@ app/
 │   └── scheduler/      # Study plan logic
 ├── utils/              # Helper functions
 ├── templates/          # AI prompt templates
+
 🧠 System Modules
-Authentication Module → JWT-based login and security
-Student Module → Tracks student progress and activity
-Course Module → Manages CPA learning content
-Quiz & Past Paper Module → Supports assessment and exam prep
-Document Module → Handles uploads and external resources
-RAG Module → Powers AI tutor using retrieval-based learning
-Scheduler Module → Generates intelligent study plans
-Gamification Module → Boosts engagement through rewards
-Analytics Module → Tracks performance and usage
-Notification Module → Sends alerts and reminders
+1. Authentication Module → JWT-based login and security
+
+2. Student Module → Tracks student progress and activity
+
+3. Course Module → Manages CPA learning content
+
+4. Quiz & Past Paper Module → Supports assessment and exam prep
+
+5. Document Module → Handles uploads and external resources
+
+6. RAG Module → Powers AI tutor using retrieval-based learning
+
+7. Scheduler Module → Generates intelligent study plans
+
+8. Gamification Module → Boosts engagement through rewards
+
+9. Analytics Module → Tracks performance and usage
+
+10. Notification Module → Sends alerts and reminders
+
+
 📊 Use Case Diagram
 usecaseDiagram
 actor Student
@@ -159,40 +183,54 @@ rectangle RayHub_AI_LMS {
 | Mon: Cost Accounting + Quiz                                  |
 | Tue: Taxation Review                                         |
 +--------------------------------------------------------------+
+
+
 🛠️ Tech Stack
-Backend
+1. Backend
+
 FastAPI
 SQLAlchemy
 PostgreSQL / SQLite
 JWT Authentication
-AI Stack
+
+2. AI Stack
 OpenAI / Sentence Transformers (Embeddings)
 FAISS / Chroma (Vector DB)
 PyPDF / BeautifulSoup (Parsing)
-Frontend
+
+3. Frontend
 Angular (Planned)
+
 🚧 Development Roadmap
-Phase 1 — MVP
+
+1. Phase 1 — MVP
 PDF upload & processing
 RAG-based Q&A
 Basic LMS (courses, quizzes)
-Phase 2 — AI Features
+
+2. Phase 2 — AI Features
 Summary generation
 Quiz generation
 Smart scheduler
-Phase 3 — Advanced System
+
+3. Phase 3 — Advanced System
 Analytics dashboard
 Real-time engagement tracking
 Gamification
 Community learning
+
 🌍 Vision
 
 RayHub aims to become a fully intelligent learning ecosystem that:
 
-Bridges education and AI
-Empowers students with personalized learning
-Supports both structured and self-driven study
-Transforms passive studying into interactive learning
+1. Bridges education and AI
+
+2. Empowers students with personalized learning
+
+3. Supports both structured and self-driven study
+
+4. Transforms passive studying into interactive learning
+
 ⚡ Status
 
 🚧 Actively under development
