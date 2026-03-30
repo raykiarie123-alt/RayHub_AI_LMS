@@ -52,3 +52,4 @@ def calculate_topic_mastery(db: Session, Student_id: int):
 
     return mastery_list
            
+           

@@ -2,7 +2,6 @@ from app.models.models import TopicMastery, QuizAttempt
 from datetime import datetime, timedelta
 
 
-
 def generate_recommendations(db, student_id):
 
     recommendations = []
@@ -39,7 +38,6 @@ def generate_recommendations(db, student_id):
 
     return recommendations
     
-
 
 def generate_reminders(db, student_id, study_plan):
 
