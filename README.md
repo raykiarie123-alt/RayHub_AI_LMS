@@ -1,69 +1,49 @@
-#  RayHub AI LMS
+🧠 RayHub AI LMS
 
 RayHub is an AI-powered Learning Management System (LMS) designed to transform how Kasneb students—starting with CPA candidates—learn, revise, and master complex concepts.
 
-It goes beyond traditional LMS platforms by integrating "Retrieval-Augmented Generation (RAG)", enabling both "structured learning" and "student-driven knowledge exploration".
+Unlike traditional LMS platforms, RayHub integrates Retrieval-Augmented Generation (RAG), enabling both structured learning and student-driven knowledge ingestion.
 
-## 🎯 Core Objectives
+🎯 Core Objectives
 
-RayHub is built around five key objectives:
+RayHub is built around the following key objectives:
 
-1. AI-Driven Personalization
+AI-Driven Personalization
 Generate adaptive study plans based on learner goals, performance trends, available time, and learning preferences.
-
-2. Intelligent Assessment Systems
+Intelligent Assessment Systems
 Provide adaptive quizzes, flashcards, and AI-generated questions to improve retention and track mastery.
-
-3. Centralized Resource Management
-Eliminate fragmented learning by consolidating notes, summaries, past papers, and guides in one platform.
-
-4. Gamified Learning Experience
-Increase engagement through streaks, points, progress tracking, and achievement systems.
-
-5. Community-Driven Learning** *(Phase 3)*
-Enable collaborative study through shared resources, discussions, and group challenges.
-
-
-##  Key Features
-
-###  LMS Core
-
-1. Course and unit tracking (CPA-focused)
-2. Past paper practice and quiz system
-3. Progress monitoring and performance insights
-4. Secure authentication (JWT-based)
-
-# AI Learning Engine (RAG)
-
-1. Upload PDFs or add web resources
-2. Ask questions directly from your materials
-3. AI-generated:
-
-a. Summaries
-b. Quiz questions
-c. Key concept explanations
-d. Combine "official LMS content + personal resources"
-
-# Smart Study Scheduler
-
-# AI-generated study plans based on:
-
-  1. Weak areas
-  2. Exam timelines
-  3. Available study hours
-  4. Uploaded learning materials
-
-# Analytics & Insights *(Upcoming)*
-
-1. Student engagement tracking
-2. Weak-topic detection
-3. Performance trends
-4. Resource usage analytics
-
-
-### System Architecture
-
-```text
+Centralized Resource Management
+Consolidate notes, past papers, summaries, and external materials into one unified platform.
+Gamified Learning Experience
+Increase engagement through streaks, points, badges, and progress tracking.
+Community-Driven Learning (Phase 3)
+Enable collaboration through shared resources, peer discussions, and group challenges.
+🧩 Key Features
+📚 LMS Core
+Course and unit tracking (CPA-focused)
+Quiz system and past paper practice
+Student progress monitoring
+Secure authentication using JWT
+🤖 AI Learning Engine (RAG)
+Upload PDFs and external resource links
+Ask AI questions based on your materials
+AI-generated:
+Summaries
+Quiz questions
+Concept explanations
+Combine official LMS content + personal uploads
+🧠 Smart Study Scheduler
+Generates study plans based on:
+Weak topics
+Exam timelines
+Available study hours
+Uploaded learning materials
+📊 Analytics & Insights (Upcoming)
+Engagement tracking
+Weak topic detection
+Performance trends
+AI usage insights
+🏗️ System Architecture
 Frontend (Angular)
         ↓
 FastAPI Backend
@@ -87,88 +67,141 @@ FastAPI Backend
 LLM (AI Model)
         ↓
 AI Outputs (chat, quiz, summary)
-```
-
----
-
-## 🛠️ Tech Stack
-
-### Backend
-
-* FastAPI
-* SQLAlchemy ORM
-* PostgreSQL / SQLite
-* JWT Authentication
-
-### AI Stack
-
-* Embeddings (OpenAI / Sentence Transformers)
-* Vector Database (FAISS / Chroma)
-* Document Processing (PyPDF, BeautifulSoup)
-
-### Frontend
-
-* Angular (planned integration)
-
----
-
-## 📂 Project Structure (High-Level)
-
-```text
+📂 Project Structure
 app/
-├── api/            # Routes (auth, courses, RAG, scheduler)
-├── core/           # Config & security
-├── models/         # Database models
-├── services/       # Business logic (AI, scheduler, etc.)
-├── db/             # Database setup
-```
+├── api/routes/         # API endpoints
+├── core/               # Config & security
+├── db/                 # Database setup
+├── models/             # SQLAlchemy models
+├── schemas/            # Pydantic schemas
+├── services/           # Business logic
+│   ├── rag/            # RAG pipeline (AI core)
+│   ├── documents/      # Upload & parsing
+│   └── scheduler/      # Study plan logic
+├── utils/              # Helper functions
+├── templates/          # AI prompt templates
+🧠 System Modules
+Authentication Module → JWT-based login and security
+Student Module → Tracks student progress and activity
+Course Module → Manages CPA learning content
+Quiz & Past Paper Module → Supports assessment and exam prep
+Document Module → Handles uploads and external resources
+RAG Module → Powers AI tutor using retrieval-based learning
+Scheduler Module → Generates intelligent study plans
+Gamification Module → Boosts engagement through rewards
+Analytics Module → Tracks performance and usage
+Notification Module → Sends alerts and reminders
+📊 Use Case Diagram
+usecaseDiagram
+actor Student
+actor Admin
+actor "AI Engine" as AI
 
----
+rectangle RayHub_AI_LMS {
+    Student --> (Register/Login)
+    Student --> (View Courses)
+    Student --> (Track Learning Progress)
+    Student --> (Attempt Quiz)
+    Student --> (Practice Past Papers)
+    Student --> (Upload PDF or Resource Link)
+    Student --> (Ask AI Questions)
+    Student --> (Generate Summary)
+    Student --> (Generate Quiz from Document)
+    Student --> (Receive Study Recommendations)
+    Student --> (View Smart Study Schedule)
 
-## 🚧 Development Roadmap
+    Admin --> (Manage Courses)
+    Admin --> (Upload Official Materials)
+    Admin --> (Manage Quizzes)
+    Admin --> (View Analytics)
 
-### Phase 1 — MVP
+    AI --> (Ask AI Questions)
+    AI --> (Generate Summary)
+    AI --> (Generate Quiz from Document)
+}
+🖼️ Wireframes
+📊 Student Dashboard
++--------------------------------------------------------------+
+|                        RAYHUB DASHBOARD                      |
++--------------------------------------------------------------+
+| Welcome, Student                                             |
+| Progress: 68%   Streak: 6 days   Exam: CPA Section 2         |
++--------------------------------------------------------------+
+| Courses | Quizzes | AI Tutor | Upload | Study Plan           |
++--------------------------------------------------------------+
+| Weak Topics: Cost Accounting, Auditing                       |
++--------------------------------------------------------------+
+| Recommended Actions                                          |
+| - Revise Cost Accounting                                     |
+| - Attempt Quiz 5                                             |
++--------------------------------------------------------------+
+🤖 AI Tutor Interface
++--------------------------------------------------------------+
+|                         AI TUTOR                             |
++--------------------------------------------------------------+
+| Source: [ LMS ] [ My PDFs ] [ Both ]                         |
++--------------------------------------------------------------+
+| Ask: Explain marginal costing                                |
++--------------------------------------------------------------+
+| AI Response:                                                 |
+| Marginal costing is...                                       |
++--------------------------------------------------------------+
+| [ Generate Quiz ] [ Summarize ]                              |
++--------------------------------------------------------------+
+📅 Smart Study Scheduler
++--------------------------------------------------------------+
+|                    SMART STUDY SCHEDULER                     |
++--------------------------------------------------------------+
+| Exam Date: 2026-05-30                                        |
+| Study Hours: 3/day                                           |
++--------------------------------------------------------------+
+| Generated Plan                                               |
+| Mon: Cost Accounting + Quiz                                  |
+| Tue: Taxation Review                                         |
++--------------------------------------------------------------+
+🛠️ Tech Stack
+Backend
+FastAPI
+SQLAlchemy
+PostgreSQL / SQLite
+JWT Authentication
+AI Stack
+OpenAI / Sentence Transformers (Embeddings)
+FAISS / Chroma (Vector DB)
+PyPDF / BeautifulSoup (Parsing)
+Frontend
+Angular (Planned)
+🚧 Development Roadmap
+Phase 1 — MVP
+PDF upload & processing
+RAG-based Q&A
+Basic LMS (courses, quizzes)
+Phase 2 — AI Features
+Summary generation
+Quiz generation
+Smart scheduler
+Phase 3 — Advanced System
+Analytics dashboard
+Real-time engagement tracking
+Gamification
+Community learning
+🌍 Vision
 
-* PDF upload & processing
-* RAG-based Q&A
-* Basic LMS (courses, quizzes, tracking)
+RayHub aims to become a fully intelligent learning ecosystem that:
 
-### Phase 2 — AI Enhancement
-
-* Quiz generation from documents
-* Summary generation
-* Smart study scheduler
-
-### Phase 3 — Advanced Features
-
-* Admin analytics dashboard
-* Real-time engagement tracking
-* Gamification system
-* Community-driven resource sharing
-
----
-
-## 🌍 Vision
-
-RayHub aims to become a **fully intelligent learning ecosystem**, bridging education and AI by:
-
-* Empowering students to learn from **both structured and self-sourced materials**
-* Providing **real-time adaptive learning support**
-* Transforming passive studying into an **interactive, personalized experience**
-
----
-Status
+Bridges education and AI
+Empowers students with personalized learning
+Supports both structured and self-driven study
+Transforms passive studying into interactive learning
+⚡ Status
 
 🚧 Actively under development
-🔥 Core AI features (RAG) in progress
-
+🔥 RAG system in progress
 
 🤝 Contribution
 
-This project is currently under active development. Contributions, feedback, and collaboration ideas are welcome in future phases.
+This project is currently under active development. Contributions and feedback are welcome in future phases.
 
----
+📌 Author
 
-## 📌 Author
-
-Built with a vision to bridge **Finance, Education, and AI**.
+Built with a vision to bridge Finance, Education, and AI.
