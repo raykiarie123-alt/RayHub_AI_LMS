@@ -3,7 +3,7 @@ from sqlalchemy import Time
 from sqlalchemy.orm import relationship
 from datetime import datetime   
 from app.database import Base
-from app.models.document import Documen
+from app.models.document import Document
 from app.models.document_chunk import DocumentChunk
 from app.models.rag_query_log import RAGQueryLog
 
@@ -17,10 +17,11 @@ class User(Base):
     email = Column(String, unique=True, index=True)
     password_hash = Column(String(200), nullable=False)
     role = Column(String(50), default="student")
-    created_at = Column(DateTime, default=datetime.utcnow)  
+    created_at = Column(DateTime, default=datetime.utcnow)
     full_name = Column(String)
+
     notifications = relationship("Notification", back_populates="student")
-    streak = relationship("UserStreak", back_populates="student")
+    streak = relationship("UserStreak", back_populates="student", uselist=False)
     documents = relationship("Document", back_populates="user")
 
 #create course model to represent courses in the system.
@@ -30,7 +31,8 @@ class Course(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, index=True)
     description = Column(Text)
-    created_at = Column(DateTime, default=datetime.utcnow)  
+    created_at = Column(DateTime, default=datetime.utcnow) 
+    levels = relationship("Level", back_populates="course") 
 
 #level model to represent different levels of courses.
 class Level(Base):
@@ -230,27 +232,22 @@ class Gamification(Base):
     points = Column(Integer, default=0)
 
 
-class UserStreaks(Base):
-    __tablename__ = "user_streaks"
+class UserStreak(Base):
+    __tablename__ = "user_streak"
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"))
     streak_count = Column(Integer, default=0)
     last_active_date = Column(Date)
 
+    student = relationship("User", back_populates="streak")
+
 class Badge(Base):
     __tablename__ = "badges"
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, index=True)
     description = Column(Text)
-
-
-
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, index=True)
-    description = Column(Text)
-    criteria = Column(Text)  # e.g., "Earn 100 points", "Complete 10 quizzes"
-
+    criteria = Column(Text)
 
 class UserBadge(Base):
     __tablename__ = "user_badges"

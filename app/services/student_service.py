@@ -6,7 +6,7 @@ from app.services.ai_service import generate_study_plan
 from app.services.recommendation_service import generate_recommendations, generate_reminders
 from datetime import datetime, timedelta    
 from app.services.notification_service import get_notifications
-from app.models.models import UserStreaks
+from app.models.models import UserStreak
 
 def get_student_dashboard(db: Session, user_id: int):
 
@@ -72,7 +72,7 @@ def get_student_dashboard(db, student_id):
         })
 
     #5. gamification elements (badges, streaks)
-    streaks = db.query(UserStreaks).filter(UserStreaks.user_id == student_id).first()  
+    streaks = db.query(UserStreak).filter(UserStreak.user_id == student_id).first()  
     badges = [] #fetch badges based on points or achievements from DB
 
 

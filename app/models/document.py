@@ -1,8 +1,8 @@
-from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
 from sqlalchemy.sql import func
-from app.database import Base
 from sqlalchemy.orm import relationship
-user = relationship("User", back_populates="documents")
+from app.database import Base
+
 
 class Document(Base):
     __tablename__ = "documents"
@@ -17,3 +17,4 @@ class Document(Base):
     upload_status = Column(String, nullable=False, default="uploaded")
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
+    user = relationship("User", back_populates="documents")

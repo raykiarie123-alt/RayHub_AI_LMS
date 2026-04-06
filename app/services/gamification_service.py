@@ -1,14 +1,14 @@
 from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
-from app.models.models import UserStreaks, UserBadge
+from app.models.models import UserStreak, UserBadge
 
 
 def update_streak(db: Session, user_id: int):
-    record = db.query(UserStreaks).filter(UserStreaks.user_id == user_id).first()
+    record = db.query(UserStreak).filter(UserStreak.user_id == user_id).first()
     today = datetime.utcnow().date()
 
     if not record:
-        record = UserStreaks(
+        record = UserStreak(
             user_id=user_id,
             streak_count=1,
             last_active_date=today

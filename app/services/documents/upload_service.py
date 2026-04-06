@@ -2,7 +2,7 @@ from fastapi import UploadFile, HTTPException
 from sqlalchemy.orm import Session
 from app.models.document import Document
 from app.utils.file_helpers import save_uploaded_file
-
+from app.services.rag.ingestion import ingest_document
 
 ALLOWED_FILE_TYPES = {"application/pdf"}
 
