@@ -10,6 +10,7 @@ from app.routes import pastpaper_routes
 from app.routes import ai_routes
 from app.routes import notification_routes
 from app.routes import gamification_routes  
+from app.api.routes.documents import router as documents_router
 
 
 # Create the database tables
@@ -40,3 +41,5 @@ app.include_router(ai_routes.router)
 app.include_router(notification_routes.router)
 
 app.include_router(gamification_routes.router)
+
+app.include_router(documents_router) 

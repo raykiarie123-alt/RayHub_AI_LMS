@@ -3,6 +3,10 @@ from sqlalchemy import Time
 from sqlalchemy.orm import relationship
 from datetime import datetime   
 from app.database import Base
+from app.models.document import Documen
+from app.models.document_chunk import DocumentChunk
+from app.models.rag_query_log import RAGQueryLog
+
 
 #create a User model to represent users in the system.
 class User(Base):
@@ -17,6 +21,7 @@ class User(Base):
     full_name = Column(String)
     notifications = relationship("Notification", back_populates="student")
     streak = relationship("UserStreak", back_populates="student")
+    documents = relationship("Document", back_populates="user")
 
 #create course model to represent courses in the system.
 class Course(Base):
