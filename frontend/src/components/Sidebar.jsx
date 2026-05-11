@@ -12,6 +12,8 @@ import {
   Menu,
   X,
   LogOut,
+  Calendar,
+  Shield,
 } from "lucide-react";
 
 function Sidebar() {
@@ -27,6 +29,11 @@ function Sidebar() {
     { label: "Progress", path: "/progress", icon: TrendingUp },
     { label: "Leaderboard", path: "/leaderboard", icon: Trophy },
     { label: "Community", path: "/community", icon: Users },
+    { label: "Study Plan", path: "/study-plan", icon: Calendar },
+  ];
+
+  const adminLinks = [
+    { label: "Admin", path: "/admin", icon: Shield },
   ];
 
   const handleLogout = () => {
@@ -81,6 +88,32 @@ function Sidebar() {
               </Link>
             );
           })}
+
+          {user?.role === 'admin' && (
+            <>
+              <div className="border-t border-slate-200 my-3"></div>
+              {adminLinks.map((item) => {
+                const Icon = item.icon;
+                const active = location.pathname === item.path;
+
+                return (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    onClick={() => setIsOpen(false)}
+                    className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm ${
+                      active
+                        ? "bg-purple-50 text-purple-700 font-semibold"
+                        : "text-slate-600 hover:bg-slate-100"
+                    }`}
+                  >
+                    <Icon size={18} />
+                    {item.label}
+                  </Link>
+                );
+              })}
+            </>
+          )}
         </nav>
 
         {/* User info & logout */}

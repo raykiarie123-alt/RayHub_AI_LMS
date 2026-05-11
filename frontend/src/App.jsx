@@ -1,6 +1,6 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
-import ProtectedRoute from './components/ProtectedRoute';
+import ProtectedRoute, { AdminRoute } from './components/ProtectedRoute';
 import { useAuth } from './hooks/useAuth';
 
 import LoginPage from './pages/LoginPage';
@@ -17,6 +17,10 @@ import LeaderboardPage from './pages/LeaderboardPage';
 import CommunityPage from './pages/CommunityPage';
 import StudyPlanPage from './pages/StudyPlanPage';
 import AdminPage from './pages/AdminPage';
+import QuizTakePage from './pages/QuizTakePage';
+import QuizResultsPage from './pages/QuizResultsPage';
+import QuizHistoryPage from './pages/QuizHistoryPage';
+import FlashcardsPage from './pages/FlashcardsPage';
 
 function PublicOnlyRoute({ children }) {
   const { user, loading } = useAuth();
@@ -121,8 +125,40 @@ export default function App() {
         <Route
           path="/admin"
           element={
-            <ProtectedRoute>
+            <AdminRoute>
               <AdminPage />
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/quizzes/:id/take"
+          element={
+            <ProtectedRoute>
+              <QuizTakePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/quizzes/:id/results"
+          element={
+            <ProtectedRoute>
+              <QuizResultsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/quiz-history"
+          element={
+            <ProtectedRoute>
+              <QuizHistoryPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/flashcards"
+          element={
+            <ProtectedRoute>
+              <FlashcardsPage />
             </ProtectedRoute>
           }
         />
