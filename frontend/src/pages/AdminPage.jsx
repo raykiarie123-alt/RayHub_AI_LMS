@@ -39,7 +39,9 @@ export default function AdminPage() {
   const handleApprove = async (id) => {
     try {
       await api.post('/admin/resources/approve', null, { params: { resource_id: id } });
-    } catch {}
+    } catch (err) {
+      console.error('Approve failed:', err);
+    }
   };
 
   return (

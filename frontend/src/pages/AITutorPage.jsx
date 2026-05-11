@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import Layout from '../components/Layout';
 import { ragApi } from '../services/ragApi';
-import { useAuth } from '../hooks/useAuth';
 import toast from 'react-hot-toast';
 import { Send, Bot, User, Trash2, Sparkles } from 'lucide-react';
 
@@ -42,7 +41,6 @@ export default function AITutorPage() {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const bottomRef = useRef(null);
-  const { user } = useAuth();
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });

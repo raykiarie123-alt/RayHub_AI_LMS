@@ -8,7 +8,7 @@ import { ragApi } from '../services/ragApi';
 import toast from 'react-hot-toast';
 import { ChevronDown, ChevronRight, Brain, Bot, BookOpen, FileText } from 'lucide-react';
 
-function TopicItem({ topic, unitId }) {
+function TopicItem({ topic }) {
   const [expanded, setExpanded] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [asking, setAsking] = useState(false);
@@ -159,7 +159,7 @@ export default function CourseDetailPage() {
             {expandedUnit === unit.id && (
               <div className="px-5 pb-5 space-y-2 border-t border-slate-100">
                 {unit.topics?.length > 0 ? (
-                  unit.topics.map(topic => <TopicItem key={topic.id} topic={topic} unitId={unit.id} />)
+                  unit.topics.map(topic => <TopicItem key={topic.id} topic={topic} />)
                 ) : (
                   <p className="text-sm text-slate-400 py-3">No topics yet.</p>
                 )}

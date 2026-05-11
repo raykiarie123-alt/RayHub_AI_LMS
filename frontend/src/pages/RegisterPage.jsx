@@ -42,7 +42,8 @@ export default function RegisterPage() {
       return;
     }
 
-    const { confirmPassword, ...registerData } = form;
+    const registerData = { ...form };
+    delete registerData.confirmPassword;
 
     setLoading(true);
     try {

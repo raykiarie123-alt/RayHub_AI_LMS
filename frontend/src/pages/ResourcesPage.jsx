@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import Layout from '../components/Layout';
 import { resourceApi } from '../services/resourceApi';
 import toast from 'react-hot-toast';
-import { Upload, Youtube, Globe, FileText, Trash2, Sparkles, Link as LinkIcon } from 'lucide-react';
+import { Upload, Video, Globe, FileText, Sparkles, Link as LinkIcon } from 'lucide-react';
 
 function UploadModal({ onClose }) {
   const [tab, setTab] = useState('pdf');
@@ -45,7 +45,7 @@ function UploadModal({ onClose }) {
         <h2 className="text-lg font-semibold text-slate-900 mb-4">Add Resource</h2>
 
         <div className="flex gap-2 mb-4">
-          {[['pdf', 'PDF', FileText], ['youtube', 'YouTube', Youtube], ['web', 'Web URL', Globe]].map(([key, label, Icon]) => (
+          {[['pdf', 'PDF', FileText], ['youtube', 'YouTube', Video], ['web', 'Web URL', Globe]].map(([key, label, Icon]) => (
             <button key={key} onClick={() => setTab(key)}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${tab === key ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>
               <Icon size={14} /> {label}
@@ -96,7 +96,7 @@ export default function ResourcesPage() {
   const handleSummarize = async (id) => {
     setSummarizing(id);
     try {
-      const res = await resourceApi.summarizeResource(id);
+      await resourceApi.summarizeResource(id);
       toast.success('Summary generated!');
       qc.invalidateQueries(['resources']);
     } catch {
@@ -106,7 +106,7 @@ export default function ResourcesPage() {
     }
   };
 
-  const typeIcon = { pdf: FileText, youtube: Youtube, web: Globe };
+  const typeIcon = { pdf: FileText, youtube: Video, web: Globe };
   const typeColor = { pdf: 'bg-red-50 text-red-700', youtube: 'bg-red-100 text-red-800', web: 'bg-blue-50 text-blue-700' };
 
   return (

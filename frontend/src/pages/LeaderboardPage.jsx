@@ -1,11 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
 import Layout from '../components/Layout';
 import { progressApi } from '../services/progressApi';
-import { useAuth } from '../hooks/useAuth';
 import { Trophy, Crown, Medal, Zap } from 'lucide-react';
 
 export default function LeaderboardPage() {
-  const { user } = useAuth();
   const { data: leaderboard, isLoading } = useQuery({
     queryKey: ['leaderboard'],
     queryFn: () => progressApi.getLeaderboard().then(r => r.data)

@@ -1,8 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import Layout from '../components/Layout';
 import { progressApi } from '../services/progressApi';
-import { RadialBarChart, RadialBar, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { TrendingUp, BookOpen, Brain, Clock, Flame, Trophy, AlertTriangle } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { BookOpen, Brain, Clock, Flame, Trophy, AlertTriangle } from 'lucide-react';
 
 function StatCard({ icon: Icon, label, value, color }) {
   return (

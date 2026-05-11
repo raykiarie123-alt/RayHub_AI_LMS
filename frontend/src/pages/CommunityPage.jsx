@@ -2,9 +2,8 @@ import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import Layout from '../components/Layout';
 import { progressApi } from '../services/progressApi';
-import { useAuth } from '../hooks/useAuth';
 import toast from 'react-hot-toast';
-import { MessageSquare, Heart, Plus, ChevronRight, Send, X } from 'lucide-react';
+import { MessageSquare, Heart, Plus, Send, X } from 'lucide-react';
 
 function NewPostModal({ onClose }) {
   const [form, setForm] = useState({ title: '', content: '', post_type: 'discussion' });
