@@ -1,17 +1,20 @@
 import os
-from openai import AsyncOpenAI
+import json
+import asyncio
+from google import genai
 from app.core.config import settings
 
-# Use the pre-configured OpenAI client (API key and base URL from environment)
-_client: AsyncOpenAI = None
+_client = None
 
 
-def get_llm_client() -> AsyncOpenAI:
+def get_llm_client():
     global _client
+
     if _client is None:
-        _client = AsyncOpenAI(
-            api_key=os.environ.get("OPENAI_API_KEY", settings.OPENAI_API_KEY)
-        )
+        api_key = os.environ.get("GEMINI_API_KEY", getattr(settings, "GEMINI_API_KEY", ""))
+
+        _client = genai.Client(api_key=api_key)
+
     return _client
 
 
@@ -22,23 +25,24 @@ async def call_llm(
     temperature: float = 0.7,
     max_tokens: int = 2000
 ) -> str:
-    """
-    Call the LLM with a system prompt and user message.
-    Returns the assistant's response text.
-    """
     client = get_llm_client()
-    model = model or settings.LLM_MODEL
+    model = model or getattr(settings, "LLM_MODEL", "gemini-2.5-flash")
 
-    response = await client.chat.completions.create(
-        model=model,
-        messages=[
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_message}
-        ],
-        temperature=temperature,
-        max_tokens=max_tokens
-    )
-    return response.choices[0].message.content
+    prompt = f"""
+{system_prompt}
+
+User question:
+{user_message}
+"""
+
+    def run_sync():
+        response = client.models.generate_content(
+            model=model,
+            contents=prompt,
+        )
+        return response.text
+
+    return await asyncio.to_thread(run_sync)
 
 
 async def call_llm_json(
@@ -47,20 +51,32 @@ async def call_llm_json(
     model: str = None,
     temperature: float = 0.3
 ) -> str:
-    """
-    Call the LLM expecting JSON output.
-    Returns the raw JSON string from the assistant.
-    """
     client = get_llm_client()
-    model = model or settings.LLM_MODEL
+    model = model or getattr(settings, "LLM_MODEL", "gemini-2.5-flash")
 
-    response = await client.chat.completions.create(
-        model=model,
-        messages=[
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_message}
-        ],
-        temperature=temperature,
-        response_format={"type": "json_object"}
-    )
-    return response.choices[0].message.content
+    prompt = f"""
+{system_prompt}
+
+Return only valid JSON.
+
+User request:
+{user_message}
+"""
+
+    def run_sync():
+        response = client.models.generate_content(
+            model=model,
+            contents=prompt,
+        )
+
+        text = response.text.strip()
+
+        if text.startswith("```json"):
+            text = text.replace("```json", "").replace("```", "").strip()
+        elif text.startswith("```"):
+            text = text.replace("```", "").strip()
+
+        json.loads(text)
+        return text
+
+    return await asyncio.to_thread(run_sync)

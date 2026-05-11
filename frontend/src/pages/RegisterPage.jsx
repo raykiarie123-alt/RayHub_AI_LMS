@@ -51,7 +51,7 @@ export default function RegisterPage() {
       toast.success('Account created! Please sign in.');
       navigate('/login');
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Registration failed');
+      toast.error(err.message || 'Registration failed');
     } finally {
       setLoading(false);
     }
