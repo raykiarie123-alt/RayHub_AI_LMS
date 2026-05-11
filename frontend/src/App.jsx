@@ -6,6 +6,7 @@ import { useAuth } from './hooks/useAuth';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import NotFoundPage from './pages/NotFoundPage';
+import LandingPage from './pages/LandingPage';
 
 import DashboardPage from './pages/DashboardPage';
 import CoursesPage from './pages/CoursePage';
@@ -25,7 +26,7 @@ import FlashcardsPage from './pages/FlashcardsPage';
 function PublicOnlyRoute({ children }) {
   const { user, loading } = useAuth();
   if (loading) return null;
-  if (user) return <Navigate to="/" replace />;
+  if (user) return <Navigate to="/dashboard" replace />;
   return children;
 }
 
@@ -50,8 +51,10 @@ export default function App() {
           }
         />
 
+        <Route path="/" element={<LandingPage />} />
+
         <Route
-          path="/"
+          path="/dashboard"
           element={
             <ProtectedRoute>
               <DashboardPage />
