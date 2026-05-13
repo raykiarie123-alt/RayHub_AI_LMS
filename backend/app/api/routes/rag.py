@@ -22,6 +22,23 @@ router = APIRouter(
     tags=["RAG AI Tutor"]
 )
 
+CPA_KEYWORDS = [
+    "cpa", "kasneb", "accounting", "accountant", "audit", "auditing",
+    "assurance", "tax", "taxation", "vat", "income tax", "corporate tax",
+    "finance", "financial", "ifrs", "ias", "financial reporting",
+    "bookkeeping", "double entry", "trial balance", "ledger",
+    "management accounting", "cost accounting", "budget", "budgeting",
+    "variance", "company law", "business law", "governance", "ethics",
+    "public finance", "economics", "leadership", "management",
+    "strategy", "risk", "internal control", "fraud", "information systems",
+    "it audit", "forensic audit", "exam", "revision", "study plan"
+]
+
+
+def is_cpa_related(question: str) -> bool:
+    q = question.lower()
+    return any(keyword in q for keyword in CPA_KEYWORDS)
+
 
 @router.post("/ask", response_model=RAGAskResponse)
 async def ask_ai(
@@ -33,6 +50,18 @@ async def ask_ai(
     Ask the AI tutor a question.
     Searches across indexed learning resources.
     """
+
+    if not is_cpa_related(data.question):
+        return RAGAskResponse(
+            answer=(
+                "I can only help with CPA-related learning questions. "
+                "Please ask a question related to accounting, auditing, "
+                "taxation, finance, law, governance, business studies, "
+                "or CPA exam preparation."
+            ),
+            sources=[],
+            question=data.question
+        )
 
     vs = get_vector_store()
 
