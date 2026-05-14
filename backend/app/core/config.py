@@ -19,8 +19,8 @@ class Settings(BaseSettings):
     # OpenAI / LLM
   # AI / LLM
   # AI / LLM
-    OPENAI_API_KEY: str = "your-openai-api-key"
-    GEMINI_API_KEY: str = "your-gemini-api-key"
+    OPENAI_API_KEY: str = ""
+    GEMINI_API_KEY: str = ""
     LLM_MODEL: str = "gemini-2.5-flash"
     EMBEDDING_MODEL: str = "all-MiniLm-L6-v2"
 

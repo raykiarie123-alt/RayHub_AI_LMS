@@ -5,6 +5,7 @@ from datetime import datetime
 
 class ResourceBase(BaseModel):
     title: str
+
     description: Optional[str] = None
     resource_type: str
     url: Optional[str] = None
@@ -31,7 +32,8 @@ class ResourceResponse(ResourceBase):
     is_approved: bool
     summary: Optional[str] = None
     created_at: Optional[datetime] = None
-
+    uploader_name: Optional[str] = None
+    course_name: Optional[str] = None
     class Config:
         from_attributes = True
 

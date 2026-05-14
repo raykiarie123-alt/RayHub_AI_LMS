@@ -1,9 +1,10 @@
 from sqlalchemy.orm import Session
 from fastapi import HTTPException
 from typing import List, Optional
+
 from app.models.resource import Resource
 from app.models.user import User
-from app.schemas.resource_schema import ResourceCreate
+from app.models.course import Course, Level
 
 
 def get_resources(
@@ -17,29 +18,57 @@ def get_resources(
     limit: int = 50
 ) -> List[Resource]:
     query = db.query(Resource)
+
     if user.role == "student":
-        query = query.filter(Resource.is_approved == True)
+        query = (
+            query.outerjoin(Course, Resource.course_id == Course.id)
+            .outerjoin(Level, Course.level_id == Level.id)
+            .filter(Resource.is_approved == True)
+            .filter(Resource.is_public == True)
+            .filter(
+                (Resource.uploader_id == user.id) |
+                (Level.name == user.cpa_level) |
+                (Resource.course_id == None)
+            )
+        )
+
     if course_id:
         query = query.filter(Resource.course_id == course_id)
+
     if unit_id:
         query = query.filter(Resource.unit_id == unit_id)
+
     if topic_id:
         query = query.filter(Resource.topic_id == topic_id)
+
     if resource_type:
         query = query.filter(Resource.resource_type == resource_type)
-    return query.order_by(Resource.created_at.desc()).offset(skip).limit(limit).all()
+
+    return (
+        query.order_by(Resource.created_at.desc())
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
 
 
 def get_resource_by_id(db: Session, resource_id: int) -> Resource:
     resource = db.query(Resource).filter(Resource.id == resource_id).first()
+
     if not resource:
         raise HTTPException(status_code=404, detail="Resource not found")
+
     return resource
 
 
 def delete_resource(db: Session, resource_id: int, user: User):
     resource = get_resource_by_id(db, resource_id)
+
     if resource.uploader_id != user.id and user.role not in ("admin", "tutor"):
-        raise HTTPException(status_code=403, detail="Not authorized to delete this resource")
+        raise HTTPException(
+            status_code=403,
+            detail="Not authorized to delete this resource"
+        )
+
     db.delete(resource)
     db.commit()

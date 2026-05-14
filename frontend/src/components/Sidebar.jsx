@@ -22,7 +22,7 @@ function Sidebar() {
   const { user, logout } = useAuth();
 
   const links = [
-    { label: "Dashboard", path: "/", icon: LayoutDashboard },
+    { label: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
     { label: "Courses", path: "/courses", icon: BookOpen },
     { label: "Resources", path: "/resources", icon: FileText },
     { label: "AI Tutor", path: "/ai-tutor", icon: Bot },

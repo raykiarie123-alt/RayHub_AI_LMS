@@ -22,15 +22,35 @@ def list_resources(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """List all resources with optional filters."""
-    return get_resources(
-        db, current_user,
-        course_id=course_id, unit_id=unit_id,
-        topic_id=topic_id, resource_type=resource_type,
-        skip=skip, limit=limit
+    resources = get_resources(
+        db,
+        current_user,
+        course_id=course_id,
+        unit_id=unit_id,
+        topic_id=topic_id,
+        resource_type=resource_type,
+        skip=skip,
+        limit=limit
     )
 
+    result = []
 
+    for r in resources:
+        item = ResourceResponse.model_validate(r)
+
+        item.uploader_name = (
+            r.uploader.full_name
+            if r.uploader else "Unknown"
+        )
+
+        item.course_name = (
+            r.course.name
+            if r.course else None
+        )
+
+        result.append(item)
+
+    return result
 @router.get("/{resource_id}", response_model=ResourceResponse)
 def get_resource(
     resource_id: int,
