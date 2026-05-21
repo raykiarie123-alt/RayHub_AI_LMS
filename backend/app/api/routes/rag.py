@@ -1,190 +1,189 @@
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
-from typing import List
+from fastapi import APIRouter, HTTPException, UploadFile, File
+from pydantic import BaseModel
+from dotenv import load_dotenv
+from google import genai
+from datetime import datetime
+import os
+import shutil
 
-from app.core.database import get_db
-from app.core.dependencies import get_current_user
-from app.core.vector_store_instance import get_vector_store
+from app.services.rag.pdf_parser import extract_text_from_pdf
+from app.services.rag.chunker import chunk_text
+from app.services.rag.vector_store import add_chunks, search_chunks
 
-from app.models.rag_chat import RAGChat
-from app.models.user import User
+load_dotenv()
 
-from app.schemas.rag_schema import (
-    RAGAskRequest,
-    RAGAskResponse,
-    RAGChatResponse
-)
+router = APIRouter(prefix="/rag", tags=["AI Tutor"])
 
-from app.services.rag.answer_generator import generate_rag_answer
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+client = genai.Client(api_key=GEMINI_API_KEY) if GEMINI_API_KEY else None
 
-router = APIRouter(
-    prefix="/rag",
-    tags=["RAG AI Tutor"]
-)
+UPLOAD_DIR = "uploads/rag"
+os.makedirs(UPLOAD_DIR, exist_ok=True)
 
-CPA_KEYWORDS = [
-    "cpa", "kasneb", "accounting", "accountant", "audit", "auditing",
-    "assurance", "tax", "taxation", "vat", "income tax", "corporate tax",
-    "finance", "financial", "ifrs", "ias", "financial reporting",
-    "bookkeeping", "double entry", "trial balance", "ledger",
-    "management accounting", "cost accounting", "budget", "budgeting",
-    "variance", "company law", "business law", "governance", "ethics",
-    "public finance", "economics", "leadership", "management",
-    "strategy", "risk", "internal control", "fraud", "information systems",
-    "it audit", "forensic audit", "exam", "revision", "study plan"
-]
+chat_history = []
 
 
-def is_cpa_related(question: str) -> bool:
-    q = question.lower()
-    return any(keyword in q for keyword in CPA_KEYWORDS)
+class AskRequest(BaseModel):
+    question: str
 
 
-@router.post("/ask", response_model=RAGAskResponse)
-async def ask_ai(
-    data: RAGAskRequest,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    """
-    Ask the AI tutor a question.
-    Searches across indexed learning resources.
-    """
+@router.post("/upload")
+async def upload_rag_pdf(file: UploadFile = File(...)):
+    try:
+        if not file.filename.lower().endswith(".pdf"):
+            raise HTTPException(
+                status_code=400,
+                detail="Only PDF files are allowed.",
+            )
 
-    if not is_cpa_related(data.question):
-        return RAGAskResponse(
-            answer=(
-                "I can only help with CPA-related learning questions. "
-                "Please ask a question related to accounting, auditing, "
-                "taxation, finance, law, governance, business studies, "
-                "or CPA exam preparation."
-            ),
-            sources=[],
-            question=data.question
-        )
+        file_path = os.path.join(UPLOAD_DIR, file.filename)
 
-    vs = get_vector_store()
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
 
-    # Prevent crashes if vector store is not initialized
-    if vs is None:
-        return RAGAskResponse(
-            answer=(
-                "AI Tutor is not ready yet because the vector "
-                "store has not been initialized. "
-                "Please upload and index learning resources first."
-            ),
-            sources=[],
-            question=data.question
-        )
+        text = extract_text_from_pdf(file_path)
 
-    # Generate AI answer
-    result = await generate_rag_answer(
-        vector_store=vs,
-        question=data.question,
-        resource_id=data.resource_id,
-        top_k=data.top_k or 5
-    )
+        if not text:
+            raise HTTPException(
+                status_code=400,
+                detail="No readable text found in this PDF.",
+            )
 
-    # Save chat history
-    chat = RAGChat(
-        user_id=current_user.id,
-        resource_id=data.resource_id,
-        topic_id=data.topic_id,
-        question=data.question,
-        answer=result["answer"],
-        sources=result["sources"],
-        context_used=result.get("context_used", "")[:2000]
-    )
+        chunks = chunk_text(text)
+        total_chunks = add_chunks(chunks)
 
-    db.add(chat)
-    db.commit()
+        return {
+            "message": "PDF uploaded, processed, and indexed successfully.",
+            "filename": file.filename,
+            "chunks_indexed": total_chunks,
+        }
 
-    return RAGAskResponse(
-        answer=result["answer"],
-        sources=result["sources"],
-        question=data.question
-    )
+    except HTTPException:
+        raise
 
-
-@router.post("/ask-resource", response_model=RAGAskResponse)
-async def ask_about_resource(
-    data: RAGAskRequest,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    """Ask a question about a specific resource."""
-
-    if not data.resource_id:
+    except Exception as e:
+        print("PDF Upload Error:", str(e))
         raise HTTPException(
-            status_code=400,
-            detail="resource_id is required"
+            status_code=500,
+            detail=f"PDF upload failed: {str(e)}",
         )
 
-    return await ask_ai(data, db, current_user)
 
+@router.post("/ask")
+def ask_ai_tutor(request: AskRequest):
+    try:
+        if not client:
+            raise HTTPException(
+                status_code=500,
+                detail="Gemini API key missing. Add GEMINI_API_KEY to your .env file.",
+            )
 
-@router.post("/ask-topic", response_model=RAGAskResponse)
-async def ask_about_topic(
-    data: RAGAskRequest,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    """Ask a question about a specific topic."""
+        if not request.question.strip():
+            raise HTTPException(
+                status_code=400,
+                detail="Question cannot be empty.",
+            )
 
-    if not data.topic_id:
+        relevant_chunks = search_chunks(request.question, top_k=5)
+
+        context = "\n\n".join(relevant_chunks)
+
+        prompt = f"""
+You are RayHub AI Tutor, a CPA/KASNEB learning assistant.
+
+Use the provided study context where relevant.
+If the context is useful, base your answer on it.
+If the context is empty or not enough, answer using your general CPA knowledge and say that no uploaded material was found for that exact question.
+
+Study Context:
+{context}
+
+Student Question:
+{request.question}
+
+Answer using this exact format:
+
+## Short Answer
+Give a direct answer in 2-3 lines.
+
+## Step-by-Step Explanation
+Use clear bullet points or numbered steps.
+
+## CPA Example
+Give a simple CPA/KASNEB-related example.
+
+## Exam Tip
+Give one short exam-focused tip.
+
+Rules:
+- Keep answers clear and structured.
+- Avoid very long paragraphs.
+- Use markdown headings.
+- Use bullet points.
+- Do not write one huge block of text.
+"""
+
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=prompt,
+        )
+
+        answer = response.text or "I could not generate a response."
+
+        chat_item = {
+            "id": len(chat_history) + 1,
+            "question": request.question,
+            "answer": answer,
+            "sources": relevant_chunks[:2],
+            "created_at": datetime.utcnow().isoformat(),
+        }
+
+        chat_history.append(chat_item)
+
+        return {
+            "answer": answer,
+            "sources": relevant_chunks[:2],
+            "chat_id": chat_item["id"],
+        }
+
+    except HTTPException:
+        raise
+
+    except Exception as e:
+        print("AI Tutor Error:", str(e))
         raise HTTPException(
-            status_code=400,
-            detail="topic_id is required"
+            status_code=500,
+            detail=f"AI Tutor failed: {str(e)}",
         )
 
-    return await ask_ai(data, db, current_user)
+
+@router.get("/history")
+def get_rag_history():
+    return chat_history
 
 
-@router.get("/history", response_model=List[RAGChatResponse])
-def get_chat_history(
-    skip: int = 0,
-    limit: int = 50,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    """Get current user's AI tutor chat history."""
-
-    chats = (
-        db.query(RAGChat)
-        .filter(RAGChat.user_id == current_user.id)
-        .order_by(RAGChat.created_at.desc())
-        .offset(skip)
-        .limit(limit)
-        .all()
-    )
-
-    return chats
+@router.delete("/history")
+def clear_rag_history():
+    chat_history.clear()
+    return {
+        "message": "Chat history cleared successfully",
+    }
 
 
 @router.delete("/history/{chat_id}")
-def delete_chat(
-    chat_id: int,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    """Delete a chat history entry."""
+def delete_chat_history_item(chat_id: int):
+    global chat_history
 
-    chat = (
-        db.query(RAGChat)
-        .filter(
-            RAGChat.id == chat_id,
-            RAGChat.user_id == current_user.id
-        )
-        .first()
-    )
+    chat_exists = any(chat["id"] == chat_id for chat in chat_history)
 
-    if not chat:
+    if not chat_exists:
         raise HTTPException(
             status_code=404,
-            detail="Chat not found"
+            detail="Chat not found",
         )
 
-    db.delete(chat)
-    db.commit()
+    chat_history = [chat for chat in chat_history if chat["id"] != chat_id]
 
-    return {"message": "Chat deleted"}
+    return {
+        "message": "Chat deleted successfully",
+    }

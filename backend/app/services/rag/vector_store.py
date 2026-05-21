@@ -1,117 +1,59 @@
-import os
-import json
-import numpy as np
 import faiss
-from typing import List, Tuple, Optional, Dict
-from app.core.config import settings
-from app.services.rag.embeddings import get_embedding_dimension
+import numpy as np
+
+from app.services.rag.embeddings import embed_texts, embed_query
 
 
 class FAISSVectorStore:
-    """
-    FAISS-based vector store for storing and retrieving document embeddings.
-    Maintains a metadata mapping alongside the FAISS index.
-    """
+    def __init__(self, dimension: int = 384):
+        self.dimension = dimension
+        self.index = faiss.IndexFlatL2(dimension)
+        self.stored_chunks = []
 
-    def __init__(self):
-        self.index_path = settings.FAISS_INDEX_PATH
-        self.meta_path = settings.FAISS_INDEX_PATH + "_meta.json"
-        self.dimension = get_embedding_dimension()
-        self.index: Optional[faiss.IndexFlatL2] = None
-        self.metadata: List[Dict] = []  # List of {resource_id, chunk_id, chunk_text}
-        self._load_or_create()
+    def add_chunks(self, chunks: list[str]):
+        if not chunks:
+            return 0
 
-    def _load_or_create(self):
-        """Load existing index or create a new one."""
-        if os.path.exists(self.index_path):
-            try:
-                self.index = faiss.read_index(self.index_path)
-                with open(self.meta_path, "r") as f:
-                    self.metadata = json.load(f)
-                return
-            except Exception:
-                pass
-        self.index = faiss.IndexFlatL2(self.dimension)
-        self.metadata = []
+        vectors = embed_texts(chunks)
+        vectors = np.array(vectors).astype("float32")
 
-    def _save(self):
-        """Persist the index and metadata to disk."""
-        os.makedirs(os.path.dirname(self.index_path) if os.path.dirname(self.index_path) else ".", exist_ok=True)
-        faiss.write_index(self.index, self.index_path)
-        with open(self.meta_path, "w") as f:
-            json.dump(self.metadata, f)
+        self.index.add(vectors)
+        self.stored_chunks.extend(chunks)
 
-    def add_embeddings(
-        self,
-        embeddings: np.ndarray,
-        meta_list: List[Dict]
-    ) -> List[int]:
-        """
-        Add embeddings and their metadata to the store.
-        Returns list of FAISS internal IDs (indices).
-        """
-        if len(embeddings) == 0:
-            return []
-        embeddings = embeddings.astype(np.float32)
-        start_id = len(self.metadata)
-        self.index.add(embeddings)
-        self.metadata.extend(meta_list)
-        self._save()
-        return list(range(start_id, start_id + len(meta_list)))
+        return len(chunks)
 
-    def search(
-        self,
-        query_embedding: np.ndarray,
-        top_k: int = 5,
-        resource_id: Optional[int] = None
-    ) -> List[Tuple[Dict, float]]:
-        """
-        Search for the most similar chunks.
-        Optionally filter by resource_id.
-        Returns list of (metadata, distance) tuples.
-        """
+    def search_chunks(self, query: str, top_k: int = 5):
         if self.index.ntotal == 0:
             return []
 
-        query_embedding = query_embedding.astype(np.float32).reshape(1, -1)
-        # Fetch more results if filtering
-        fetch_k = min(top_k * 10 if resource_id else top_k, self.index.ntotal)
-        distances, indices = self.index.search(query_embedding, fetch_k)
+        query_vector = embed_query(query)
+        query_vector = np.array(query_vector).astype("float32")
+
+        distances, indices = self.index.search(query_vector, top_k)
 
         results = []
-        for dist, idx in zip(distances[0], indices[0]):
-            if idx < 0 or idx >= len(self.metadata):
-                continue
-            meta = self.metadata[idx]
-            if resource_id and meta.get("resource_id") != resource_id:
-                continue
-            results.append((meta, float(dist)))
-            if len(results) >= top_k:
-                break
+
+        for idx in indices[0]:
+            if idx != -1 and idx < len(self.stored_chunks):
+                results.append(self.stored_chunks[idx])
 
         return results
 
-    def delete_by_resource(self, resource_id: int):
-        """
-        Remove all vectors for a given resource.
-        FAISS flat index doesn't support deletion natively — rebuild without those entries.
-        """
-        from app.services.rag.embeddings import embed_texts
-        remaining_meta = [m for m in self.metadata if m.get("resource_id") != resource_id]
-        if len(remaining_meta) == len(self.metadata):
-            return  # Nothing to delete
-
-        # Rebuild index
+    def clear(self):
         self.index = faiss.IndexFlatL2(self.dimension)
-        self.metadata = []
+        self.stored_chunks = []
 
-        if remaining_meta:
-            texts = [m["chunk_text"] for m in remaining_meta]
-            embeddings = embed_texts(texts).astype(np.float32)
-            self.index.add(embeddings)
-            self.metadata = remaining_meta
 
-        self._save()
+vector_store = FAISSVectorStore()
 
-    def get_total_vectors(self) -> int:
-        return self.index.ntotal if self.index else 0
+
+def add_chunks(chunks: list[str]):
+    return vector_store.add_chunks(chunks)
+
+
+def search_chunks(query: str, top_k: int = 5):
+    return vector_store.search_chunks(query, top_k)
+
+
+def clear_vector_store():
+    vector_store.clear()
