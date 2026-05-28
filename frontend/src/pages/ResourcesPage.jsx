@@ -13,6 +13,7 @@ import {
   Trash2,
   User,
   BookOpen,
+  Layers,
 } from 'lucide-react';
 
 function UploadModal({ onClose }) {
@@ -23,6 +24,8 @@ function UploadModal({ onClose }) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [loading, setLoading] = useState(false);
+
+  const [resourceLevel, setResourceLevel] = useState('foundation');
 
   const qc = useQueryClient();
 
@@ -47,37 +50,49 @@ function UploadModal({ onClose }) {
     try {
       if (tab === 'pdf') {
         const fd = new FormData();
+
         fd.append('file', file);
         fd.append('title', title || file.name);
         fd.append('description', description || 'Uploaded learning resource');
         fd.append('resource_type', 'pdf');
 
+        // NEW
+        fd.append('level', resourceLevel);
+
         await resourceApi.uploadDocument(fd);
-        toast.success('Document uploaded and indexed!');
+
+        toast.success('Document uploaded successfully!');
       }
 
       if (tab === 'youtube') {
         await resourceApi.ingestYouTube({
           url: ytUrl,
           title,
+          description,
+          level: resourceLevel,
         });
 
-        toast.success('YouTube video added!');
+        toast.success('YouTube resource added!');
       }
 
       if (tab === 'web') {
         await resourceApi.ingestWeb({
           url: webUrl,
           title,
+          description,
+          level: resourceLevel,
         });
 
         toast.success('Web resource added!');
       }
 
       qc.invalidateQueries({ queryKey: ['resources'] });
+
       onClose();
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Upload failed');
+      toast.error(
+        err.response?.data?.detail || 'Upload failed'
+      );
     } finally {
       setLoading(false);
     }
@@ -105,7 +120,8 @@ function UploadModal({ onClose }) {
                   : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
               }`}
             >
-              <Icon size={14} /> {label}
+              <Icon size={14} />
+              {label}
             </button>
           ))}
         </div>
@@ -125,6 +141,23 @@ function UploadModal({ onClose }) {
             rows={3}
             className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
           />
+
+          {/* LEVEL SELECTOR */}
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">
+              Resource Level
+            </label>
+
+            <select
+              value={resourceLevel}
+              onChange={(e) => setResourceLevel(e.target.value)}
+              className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            >
+              <option value="foundation">Foundation</option>
+              <option value="intermediate">Intermediate</option>
+              <option value="advanced">Advanced</option>
+            </select>
+          </div>
 
           {tab === 'pdf' && (
             <input
@@ -177,8 +210,6 @@ function UploadModal({ onClose }) {
 
 export default function ResourcesPage() {
   const [showModal, setShowModal] = useState(false);
-  const [summarizing, setSummarizing] = useState(null);
-  const [deleting, setDeleting] = useState(null);
 
   const qc = useQueryClient();
 
@@ -187,20 +218,6 @@ export default function ResourcesPage() {
     queryFn: () => resourceApi.getResources().then((r) => r.data),
   });
 
-  const handleSummarize = async (id) => {
-    setSummarizing(id);
-
-    try {
-      await resourceApi.summarizeResource(id);
-      toast.success('Summary generated!');
-      qc.invalidateQueries({ queryKey: ['resources'] });
-    } catch {
-      toast.error('Summarization failed');
-    } finally {
-      setSummarizing(null);
-    }
-  };
-
   const handleDelete = async (id) => {
     const confirmDelete = window.confirm(
       'Are you sure you want to delete this resource?'
@@ -208,35 +225,21 @@ export default function ResourcesPage() {
 
     if (!confirmDelete) return;
 
-    setDeleting(id);
-
     try {
       await resourceApi.deleteDocument(id);
+
       toast.success('Resource deleted');
+
       qc.invalidateQueries({ queryKey: ['resources'] });
     } catch {
       toast.error('Delete failed');
-    } finally {
-      setDeleting(null);
     }
   };
 
-  const typeIcon = {
-    pdf: FileText,
-    youtube: Video,
-    web: Globe,
-    website: Globe,
-    text: FileText,
-    past_paper: FileText,
-  };
-
-  const typeColor = {
-    pdf: 'bg-red-50 text-red-700',
-    youtube: 'bg-red-100 text-red-800',
-    web: 'bg-blue-50 text-blue-700',
-    website: 'bg-blue-50 text-blue-700',
-    text: 'bg-slate-50 text-slate-700',
-    past_paper: 'bg-purple-50 text-purple-700',
+  const levelColor = {
+    foundation: 'bg-emerald-50 text-emerald-700',
+    intermediate: 'bg-amber-50 text-amber-700',
+    advanced: 'bg-rose-50 text-rose-700',
   };
 
   return (
@@ -244,10 +247,11 @@ export default function ResourcesPage() {
       <div className="flex justify-between items-center mb-6">
         <div>
           <p className="text-slate-500 text-sm">
-            {resources?.length || 0} resources available for your learning level
+            {resources?.length || 0} resources available
           </p>
+
           <p className="text-xs text-slate-400 mt-1">
-            Upload, share, summarize, and collaborate using CPA learning resources.
+            Access resources based on your academic level
           </p>
         </div>
 
@@ -255,7 +259,8 @@ export default function ResourcesPage() {
           onClick={() => setShowModal(true)}
           className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700"
         >
-          <Upload size={16} /> Add Resource
+          <Upload size={16} />
+          Add Resource
         </button>
       </div>
 
@@ -265,107 +270,84 @@ export default function ResourcesPage() {
         </div>
       ) : (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {resources?.map((resource) => {
-            const Icon = typeIcon[resource.resource_type] || FileText;
-            const colorClass =
-              typeColor[resource.resource_type] || 'bg-slate-50 text-slate-700';
-
-            return (
-              <div
-                key={resource.id}
-                className="bg-white rounded-xl border border-slate-100 p-5 shadow-sm hover:shadow-md transition-shadow"
-              >
-                <div className="flex items-start justify-between mb-3">
-                  <div
-                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium ${colorClass}`}
-                  >
-                    <Icon size={12} /> {resource.resource_type?.toUpperCase()}
+          {resources?.map((resource) => (
+            <div
+              key={resource.id}
+              className="bg-white rounded-xl border border-slate-100 p-5 shadow-sm hover:shadow-md transition-shadow"
+            >
+              <div className="flex justify-between items-center mb-3">
+                <span
+                  className={`px-2 py-1 rounded-lg text-xs font-medium ${
+                    levelColor[resource.level]
+                  }`}
+                >
+                  <div className="flex items-center gap-1">
+                    <Layers size={12} />
+                    {resource.level}
                   </div>
+                </span>
 
-                  {resource.is_indexed && (
-                    <span className="text-xs bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full">
-                      Indexed
-                    </span>
-                  )}
-                </div>
-
-                <h3 className="font-semibold text-slate-900 mb-1 line-clamp-2">
-                  {resource.title}
-                </h3>
-
-                <div className="text-xs text-slate-400 space-y-1 mb-2">
-                  {resource.uploader_name && (
-                    <p className="flex items-center gap-1">
-                      <User size={12} /> Uploaded by: {resource.uploader_name}
-                    </p>
-                  )}
-
-                  {resource.course_name && (
-                    <p className="flex items-center gap-1">
-                      <BookOpen size={12} /> Course: {resource.course_name}
-                    </p>
-                  )}
-                </div>
-
-                {resource.description && (
-                  <p className="text-xs text-slate-500 line-clamp-2 mb-3">
-                    {resource.description}
-                  </p>
+                {resource.is_indexed && (
+                  <span className="text-xs bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full">
+                    Indexed
+                  </span>
                 )}
-
-                {resource.summary && (
-                  <p className="text-xs text-slate-500 line-clamp-3 mb-3 bg-slate-50 p-2 rounded-lg">
-                    {resource.summary}
-                  </p>
-                )}
-
-                <div className="flex flex-wrap gap-2 mt-3">
-                  <button
-                    onClick={() => handleSummarize(resource.id)}
-                    disabled={summarizing === resource.id}
-                    className="flex items-center gap-1 px-2.5 py-1.5 bg-indigo-50 text-indigo-700 rounded-lg text-xs hover:bg-indigo-100 disabled:opacity-60"
-                  >
-                    <Sparkles size={12} />
-                    {summarizing === resource.id ? '...' : 'Summarize'}
-                  </button>
-
-                  {resource.url && (
-                    <a
-                      href={resource.url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="flex items-center gap-1 px-2.5 py-1.5 bg-slate-100 text-slate-600 rounded-lg text-xs hover:bg-slate-200"
-                    >
-                      <LinkIcon size={12} /> Open
-                    </a>
-                  )}
-
-                  <button
-                    onClick={() => handleDelete(resource.id)}
-                    disabled={deleting === resource.id}
-                    className="flex items-center gap-1 px-2.5 py-1.5 bg-red-50 text-red-700 rounded-lg text-xs hover:bg-red-100 disabled:opacity-60"
-                  >
-                    <Trash2 size={12} />
-                    {deleting === resource.id ? '...' : 'Delete'}
-                  </button>
-                </div>
               </div>
-            );
-          })}
+
+              <h3 className="font-semibold text-slate-900 mb-2">
+                {resource.title}
+              </h3>
+
+              <p className="text-sm text-slate-500 mb-4 line-clamp-3">
+                {resource.description}
+              </p>
+
+              <div className="flex items-center justify-between">
+                <button
+                  onClick={() => handleDelete(resource.id)}
+                  className="flex items-center gap-1 px-3 py-1.5 bg-red-50 text-red-700 rounded-lg text-xs hover:bg-red-100"
+                >
+                  <Trash2 size={12} />
+                  Delete
+                </button>
+
+                {resource.url && (
+                  <a
+                    href={resource.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex items-center gap-1 px-3 py-1.5 bg-slate-100 text-slate-700 rounded-lg text-xs hover:bg-slate-200"
+                  >
+                    <LinkIcon size={12} />
+                    Open
+                  </a>
+                )}
+              </div>
+            </div>
+          ))}
         </div>
       )}
 
-      {resources?.length === 0 && !isLoading && (
-        <div className="text-center py-20 text-slate-400">
-          <FileText size={48} className="mx-auto mb-3 opacity-30" />
-          <p className="font-medium">No resources yet</p>
-          <p className="text-sm mt-1">
-            Upload PDFs, add YouTube videos, or ingest web pages.
+      {!isLoading && resources?.length === 0 && (
+        <div className="text-center py-20">
+          <FileText
+            size={48}
+            className="mx-auto mb-3 text-slate-300"
+          />
+
+          <p className="text-slate-500 font-medium">
+            No resources available
+          </p>
+
+          <p className="text-sm text-slate-400 mt-1">
+            Upload resources for your level
           </p>
         </div>
       )}
 
-      {showModal && <UploadModal onClose={() => setShowModal(false)} />}
+      {showModal && (
+        <UploadModal onClose={() => setShowModal(false)} />
+      )}
     </Layout>
   );
 }

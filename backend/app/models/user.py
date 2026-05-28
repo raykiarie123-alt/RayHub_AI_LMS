@@ -5,6 +5,7 @@ from app.core.database import Base
 import enum
 
 
+
 class UserRole(str, enum.Enum):
     student = "student"
     tutor = "tutor"
@@ -29,6 +30,7 @@ class User(Base):
     available_hours_per_day = Column(Integer, default=3)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    student_level = Column(String, default="foundation")
 
     # Relationships
     resources = relationship("Resource", back_populates="uploader", cascade="all, delete-orphan")

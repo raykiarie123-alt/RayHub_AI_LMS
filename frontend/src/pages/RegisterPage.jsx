@@ -11,6 +11,7 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const { register } = useAuth();
   const navigate = useNavigate();
+  const [studentLevel, setStudentLevel] = useState("foundation");
 
   const handleChange = (e) => setForm(f => ({ ...f, [e.target.name]: e.target.value }));
 
@@ -141,6 +142,22 @@ export default function RegisterPage() {
             <Link to="/login" className="text-indigo-600 font-medium hover:underline">Sign in</Link>
           </p>
         </div>
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-slate-700 mb-1.5 mt-4">  
+          Student Level
+        </label>
+
+        <select
+        value={studentLevel}
+        onChange={(e) => setStudentLevel(e.target.value)}
+        className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+      >
+        <option value="foundation">Foundation</option>
+        <option value="intermediate">Intermediate</option>
+        <option value="advanced">Advanced</option>
+
+        </select>
       </div>
     </div>
   );

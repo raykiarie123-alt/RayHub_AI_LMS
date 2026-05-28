@@ -23,6 +23,7 @@ def register_user(db: Session, data: RegisterRequest) -> User:
         hashed_password=get_password_hash(data.password),
         role=data.role or "student",
         cpa_level=data.cpa_level,
+        student_level=data.student_level,
     )
     db.add(user)
     db.flush()

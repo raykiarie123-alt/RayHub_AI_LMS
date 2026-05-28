@@ -12,6 +12,7 @@ class UserBase(BaseModel):
     bio: Optional[str] = None
     avatar_url: Optional[str] = None
     available_hours_per_day: Optional[int] = 3
+    student_level: str = "foundation"
 
 
 class UserCreate(UserBase):

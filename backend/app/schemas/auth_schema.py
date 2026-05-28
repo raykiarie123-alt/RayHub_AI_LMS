@@ -9,6 +9,7 @@ class RegisterRequest(BaseModel):
     password: str
     role: Optional[str] = "student"
     cpa_level: Optional[str] = None
+    student_level: Optional[str] = None
 
 
 class LoginRequest(BaseModel):

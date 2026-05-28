@@ -11,6 +11,7 @@ class Resource(Base):
     title = Column(String(255), nullable=False)
     description = Column(Text, nullable=True)
     resource_type = Column(String(50), nullable=False)  # pdf, text, youtube, website, past_paper
+    level = Column(String, default="foundation") 
     file_path = Column(String(500), nullable=True)
     url = Column(String(1000), nullable=True)
     content_text = Column(Text, nullable=True)
@@ -35,6 +36,7 @@ class Resource(Base):
     topic = relationship("Topic", back_populates="resources")
     chunks = relationship("ResourceChunk", back_populates="resource", cascade="all, delete-orphan")
     rag_chats = relationship("RAGChat", back_populates="resource")
+
 
 
 class ResourceChunk(Base):

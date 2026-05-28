@@ -1,35 +1,94 @@
-from datetime import datetime, timedelta #datetime for token expiry
-from typing import Optional, Union
-from jose import JWTError, jwt #JWT for token encoding and decoding
-from passlib.context import CryptContext #for password hashing and verification
-from app.core.config import settings #import settings to access configuration values like SECRET_KEY and ALGORITHM
+from datetime import datetime, timedelta
+from typing import Optional, Dict, Any
 
-# Security utilities for password hashing, token creation, and token decoding. This module provides functions to hash passwords, verify passwords, create JWT access tokens, and decode JWT tokens. It uses the settings defined in the config module for configuration values.
+from jose import JWTError, jwt
+from passlib.context import CryptContext
+
+from fastapi import Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer
+
+from app.core.config import settings
+
+
+# =========================
+# PASSWORD SECURITY
+# =========================
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-# Function to verify a plain password against a hashed password using the password context.
+
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)
 
-# Function to create a hash of a password using the password context.
+
 def get_password_hash(password: str) -> str:
     return pwd_context.hash(password)
 
-# Function to create a JWT access token with the given data and expiration delta.
+
+# =========================
+# JWT TOKEN HANDLING
+# =========================
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
     to_encode = data.copy()
-    if expires_delta:
-        expire = datetime.utcnow() + expires_delta
-    else:
-        expire = datetime.utcnow() + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+
+    expire = datetime.utcnow() + (
+        expires_delta
+        if expires_delta
+        else timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    )
+
     to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+
+    encoded_jwt = jwt.encode(
+        to_encode,
+        settings.SECRET_KEY,
+        algorithm=settings.ALGORITHM
+    )
+
     return encoded_jwt
 
-# Function to decode a JWT token and return the payload if the token is valid, or None if the token is invalid or expired.
-def decode_token(token: str) -> Optional[dict]:
+
+def decode_token(token: str) -> Optional[Dict[str, Any]]:
     try:
-        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        payload = jwt.decode(
+            token,
+            settings.SECRET_KEY,
+            algorithms=[settings.ALGORITHM]
+        )
         return payload
     except JWTError:
         return None
+
+
+# =========================
+# AUTH DEPENDENCY (FIX)
+# =========================
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
+
+
+def get_current_user(token: str = Depends(oauth2_scheme)) -> Dict[str, Any]:
+    """
+    Extract and validate current user from JWT token.
+    """
+
+    payload = decode_token(token)
+
+    if payload is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    user_id = payload.get("sub")
+
+    if user_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token missing subject (sub)",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    return {
+        "user_id": user_id,
+        "payload": payload
+    }
