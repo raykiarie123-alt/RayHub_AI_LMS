@@ -50,11 +50,7 @@ def get_resources(
         .limit(limit)
         .all()
     )
-LEVEL_ACCESS = {
-    "foundation": ["foundation"],
-    "intermediate": ["foundation", "intermediate"],
-    "advanced": ["foundation", "intermediate", "advanced"],
-}
+
 
 def get_resource_by_id(db: Session, resource_id: int) -> Resource:
     resource = db.query(Resource).filter(Resource.id == resource_id).first()

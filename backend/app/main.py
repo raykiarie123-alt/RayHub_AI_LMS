@@ -25,6 +25,7 @@ from app.api.routes.progress import router as progress_router
 from app.api.routes.gamification import router as gamification_router
 from app.api.routes.community import router as community_router
 from app.api.routes.admin import router as admin_router
+from app.api.routes import ai
 
 
 app = FastAPI(
@@ -69,6 +70,7 @@ app.include_router(progress_router)
 app.include_router(gamification_router)
 app.include_router(community_router)
 app.include_router(admin_router)
+app.include_router(ai.router, prefix="/ai", tags=["AI"])
 
 
 @app.on_event("startup")
