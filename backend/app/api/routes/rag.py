@@ -1,11 +1,17 @@
-from fastapi import APIRouter, HTTPException, UploadFile, File
+from fastapi import APIRouter, HTTPException, UploadFile, File, Depends
 from pydantic import BaseModel
+from sqlalchemy.orm import Session
 from dotenv import load_dotenv
 from google import genai
 from datetime import datetime
+from typing import Optional
 import os
 import shutil
 
+from app.core.database import get_db
+from app.core.dependencies import get_current_user
+from app.models.user import User
+from app.models.rag_chat import RAGChat
 from app.services.rag.pdf_parser import extract_text_from_pdf
 from app.services.rag.chunker import chunk_text
 from app.services.rag.vector_store import add_chunks, search_chunks
@@ -20,34 +26,29 @@ client = genai.Client(api_key=GEMINI_API_KEY) if GEMINI_API_KEY else None
 UPLOAD_DIR = "uploads/rag"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
-chat_history = []
-
 
 class AskRequest(BaseModel):
     question: str
+    resource_id: Optional[int] = None
+    top_k: int = 5
 
 
 @router.post("/upload")
-async def upload_rag_pdf(file: UploadFile = File(...)):
+async def upload_rag_pdf(
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user),
+):
     try:
         if not file.filename.lower().endswith(".pdf"):
-            raise HTTPException(
-                status_code=400,
-                detail="Only PDF files are allowed.",
-            )
+            raise HTTPException(status_code=400, detail="Only PDF files are allowed.")
 
         file_path = os.path.join(UPLOAD_DIR, file.filename)
-
         with open(file_path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
 
         text = extract_text_from_pdf(file_path)
-
         if not text:
-            raise HTTPException(
-                status_code=400,
-                detail="No readable text found in this PDF.",
-            )
+            raise HTTPException(status_code=400, detail="No readable text found in this PDF.")
 
         chunks = chunk_text(text)
         total_chunks = add_chunks(chunks)
@@ -57,20 +58,18 @@ async def upload_rag_pdf(file: UploadFile = File(...)):
             "filename": file.filename,
             "chunks_indexed": total_chunks,
         }
-
     except HTTPException:
         raise
-
     except Exception as e:
-        print("PDF Upload Error:", str(e))
-        raise HTTPException(
-            status_code=500,
-            detail=f"PDF upload failed: {str(e)}",
-        )
+        raise HTTPException(status_code=500, detail=f"PDF upload failed: {str(e)}")
 
 
 @router.post("/ask")
-def ask_ai_tutor(request: AskRequest):
+def ask_ai_tutor(
+    request: AskRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
     try:
         if not client:
             raise HTTPException(
@@ -79,13 +78,9 @@ def ask_ai_tutor(request: AskRequest):
             )
 
         if not request.question.strip():
-            raise HTTPException(
-                status_code=400,
-                detail="Question cannot be empty.",
-            )
+            raise HTTPException(status_code=400, detail="Question cannot be empty.")
 
-        relevant_chunks = search_chunks(request.question, top_k=5)
-
+        relevant_chunks = search_chunks(request.question, top_k=request.top_k)
         context = "\n\n".join(relevant_chunks)
 
         prompt = f"""
@@ -130,60 +125,77 @@ Rules:
 
         answer = response.text or "I could not generate a response."
 
-        chat_item = {
-            "id": len(chat_history) + 1,
-            "question": request.question,
-            "answer": answer,
-            "sources": relevant_chunks[:2],
-            "created_at": datetime.utcnow().isoformat(),
-        }
-
-        chat_history.append(chat_item)
+        # Persist to database
+        chat_record = RAGChat(
+            user_id=current_user.id,
+            resource_id=request.resource_id,
+            question=request.question,
+            answer=answer,
+            sources=relevant_chunks[:2],
+            created_at=datetime.utcnow(),
+        )
+        db.add(chat_record)
+        db.commit()
+        db.refresh(chat_record)
 
         return {
             "answer": answer,
             "sources": relevant_chunks[:2],
-            "chat_id": chat_item["id"],
+            "chat_id": chat_record.id,
         }
 
     except HTTPException:
         raise
-
     except Exception as e:
-        print("AI Tutor Error:", str(e))
-        raise HTTPException(
-            status_code=500,
-            detail=f"AI Tutor failed: {str(e)}",
-        )
+        raise HTTPException(status_code=500, detail=f"AI Tutor failed: {str(e)}")
 
 
 @router.get("/history")
-def get_rag_history():
-    return chat_history
+def get_rag_history(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    chats = (
+        db.query(RAGChat)
+        .filter(RAGChat.user_id == current_user.id)
+        .order_by(RAGChat.created_at.desc())
+        .limit(50)
+        .all()
+    )
+    return [
+        {
+            "id": c.id,
+            "question": c.question,
+            "answer": c.answer,
+            "sources": c.sources or [],
+            "created_at": c.created_at,
+        }
+        for c in chats
+    ]
 
 
 @router.delete("/history")
-def clear_rag_history():
-    chat_history.clear()
-    return {
-        "message": "Chat history cleared successfully",
-    }
+def clear_rag_history(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    db.query(RAGChat).filter(RAGChat.user_id == current_user.id).delete()
+    db.commit()
+    return {"message": "Chat history cleared successfully"}
 
 
 @router.delete("/history/{chat_id}")
-def delete_chat_history_item(chat_id: int):
-    global chat_history
-
-    chat_exists = any(chat["id"] == chat_id for chat in chat_history)
-
-    if not chat_exists:
-        raise HTTPException(
-            status_code=404,
-            detail="Chat not found",
-        )
-
-    chat_history = [chat for chat in chat_history if chat["id"] != chat_id]
-
-    return {
-        "message": "Chat deleted successfully",
-    }
+def delete_chat_history_item(
+    chat_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    chat = db.query(RAGChat).filter(
+        RAGChat.id == chat_id,
+        RAGChat.user_id == current_user.id,
+    ).first()
+    if not chat:
+        raise HTTPException(status_code=404, detail="Chat not found")
+    db.delete(chat)
+    db.commit()
+    return {"message": "Chat deleted successfully"}

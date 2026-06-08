@@ -16,15 +16,11 @@ class Settings(BaseSettings):
     # Database
     DATABASE_URL: str = "sqlite:///./rayhub.db"
 
-    # OpenAI / LLM
-  # AI / LLM
-  # AI / LLM
+    # AI / LLM
     OPENAI_API_KEY: str = ""
     GEMINI_API_KEY: str = ""
-    LLM_MODEL: str = "gemini-2.5-flash-lite"
+    LLM_MODEL: str = "gemini-2.0-flash-lite"
     EMBEDDING_MODEL: str = "all-MiniLm-L6-v2"
-
-
 
     # Vector Store
     VECTOR_STORE_PATH: str = "./vector_store"

@@ -1,11 +1,12 @@
-import { Link } from 'react-router-dom';
-import { 
-  Zap, 
-  Brain, 
-  Trophy, 
-  BookOpen, 
-  Users, 
-  Target, 
+import { Link, Navigate } from 'react-router-dom';
+import { useAuth } from '../hooks/useAuth';
+import {
+  Zap,
+  Brain,
+  Trophy,
+  BookOpen,
+  Users,
+  Target,
   ChevronRight,
   Sparkles,
   Award,
@@ -15,6 +16,11 @@ import {
 } from 'lucide-react';
 
 export default function LandingPage() {
+  const { user, loading } = useAuth();
+
+  if (loading) return null;
+  if (user) return <Navigate to="/dashboard" replace />;
+
   return (
     <div className="min-h-screen bg-white">
       {/* Navigation */}

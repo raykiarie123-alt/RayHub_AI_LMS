@@ -104,3 +104,58 @@ def delete_course(
     db.delete(course)
     db.commit()
     return {"message": "Course deleted"}
+
+
+@router.get("/{course_id}/resources")
+def get_course_resources(
+    course_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Return all resources associated with a course (by course_id or matching level)."""
+    from app.models.resource import Resource
+
+    course = db.query(Course).filter(Course.id == course_id).first()
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found")
+
+    # Resources explicitly linked to this course
+    direct = db.query(Resource).filter(Resource.course_id == course_id).all()
+
+    # Resources linked by level (uploaded by students at this level)
+    level = db.query(Level).filter(Level.id == course.level_id).first()
+    level_name = (level.name if level else "Foundation").lower().replace("-", "").replace(" ", "")
+    # Map level names to the level column in resources
+    level_map = {
+        "foundation": "foundation",
+        "intermediate": "intermediate",
+        "advanced": "advanced",
+        "postqualification": "post-qualification",
+    }
+    resource_level = level_map.get(level_name, "foundation")
+
+    level_resources = (
+        db.query(Resource)
+        .filter(Resource.level == resource_level, Resource.course_id.is_(None))
+        .order_by(Resource.created_at.desc())
+        .limit(30)
+        .all()
+    )
+
+    all_resources = {r.id: r for r in direct + level_resources}.values()
+
+    return [
+        {
+            "id": r.id,
+            "title": r.title,
+            "description": r.description,
+            "resource_type": r.resource_type,
+            "level": r.level,
+            "url": r.url,
+            "file_path": r.file_path,
+            "is_indexed": r.is_indexed,
+            "uploader_id": r.uploader_id,
+            "created_at": r.created_at,
+        }
+        for r in all_resources
+    ]

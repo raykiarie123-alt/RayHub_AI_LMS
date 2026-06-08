@@ -112,10 +112,12 @@ def get_leaderboard(
             "user_id": profile.user_id,
             "full_name": user.full_name if user else "Unknown",
             "username": user.username if user else "unknown",
+            "cpa_level": user.cpa_level if user else None,
+            "student_level": user.student_level if user else "foundation",
             "total_xp": profile.total_xp,
             "level": profile.level,
             "rank_title": profile.rank,
-            "is_current_user": profile.user_id == current_user.id
+            "is_current_user": profile.user_id == current_user.id,
         })
     return leaderboard
 
