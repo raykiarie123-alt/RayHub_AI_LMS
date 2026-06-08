@@ -1,39 +1,67 @@
 import os
-import PyPDF2
-from typing import Optional
-
-
-def extract_text_from_pdf(file_path: str) -> str:
-    """Extract text content from a PDF file."""
-    text_parts = []
-    try:
-        with open(file_path, "rb") as f:
-            reader = PyPDF2.PdfReader(f)
-            for page in reader.pages:
-                text = page.extract_text()
-                if text:
-                    text_parts.append(text)
-    except Exception as e:
-        raise ValueError(f"Failed to extract text from PDF: {str(e)}")
-    return "\n\n".join(text_parts)
-
-
-def extract_text_from_txt(file_path: str) -> str:
-    """Extract text from a plain text file."""
-    with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
-        return f.read()
+from pathlib import Path
 
 
 def extract_text_from_file(file_path: str) -> str:
-    """Auto-detect file type and extract text."""
-    ext = os.path.splitext(file_path)[1].lower()
-    if ext == ".pdf":
-        return extract_text_from_pdf(file_path)
-    elif ext in (".txt", ".md"):
-        return extract_text_from_txt(file_path)
-    else:
-        # Try as text
+    """Extract text from PDF, TXT, MD, or DOCX files.
+    Encrypted PDFs that cannot be decrypted are accepted but stored with empty text.
+    """
+    ext = Path(file_path).suffix.lower()
+
+    if ext == ".txt" or ext == ".md":
+        with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
+            return f.read()
+
+    elif ext == ".docx":
         try:
-            return extract_text_from_txt(file_path)
-        except Exception:
-            raise ValueError(f"Unsupported file type: {ext}")
+            import docx
+            doc = docx.Document(file_path)
+            return "\n".join([p.text for p in doc.paragraphs])
+        except Exception as e:
+            raise ValueError(f"Could not read DOCX file: {e}")
+
+    elif ext == ".pdf":
+        return _extract_pdf_text(file_path)
+
+    else:
+        raise ValueError(f"Unsupported file type: {ext}")
+
+
+def _extract_pdf_text(file_path: str) -> str:
+    """Extract text from a PDF. Handles encrypted/password-protected PDFs gracefully."""
+    try:
+        from pypdf import PdfReader
+    except ImportError:
+        try:
+            from PyPDF2 import PdfReader
+        except ImportError:
+            raise ValueError("pypdf is not installed. Run: pip install pypdf")
+
+    try:
+        reader = PdfReader(file_path)
+
+        # Handle encrypted PDFs
+        if reader.is_encrypted:
+            # Try decrypting with an empty password (many PDFs use this)
+            try:
+                reader.decrypt("")
+            except Exception:
+                # PyCryptodome not installed or wrong password — store file without text
+                # The file is still saved; it just won't be searchable via RAG
+                return ""
+
+        text_parts = []
+        for page in reader.pages:
+            try:
+                text = page.extract_text()
+                if text:
+                    text_parts.append(text)
+            except Exception:
+                continue  # Skip unreadable pages, don't crash
+
+        return "\n".join(text_parts)
+
+    except Exception as e:
+        # Never block the upload — return empty text and log the error
+        print(f"[parser_service] Warning: could not extract text from {file_path}: {e}")
+        return ""
